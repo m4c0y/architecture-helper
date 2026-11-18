@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "ask": [
+      "Edit(projetos/*/geometria.yaml)",
+      "Write(projetos/*/geometria.yaml)",
+      "Edit(projetos/*/fontes/**)",
+      "Write(projetos/*/fontes/**)"
+    ]
+  }
+}

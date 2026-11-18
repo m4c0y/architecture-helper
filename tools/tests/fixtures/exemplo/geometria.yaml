@@ -1,0 +1,43 @@
+# EXEMPLO FICTÍCIO para testes. Não representa nenhum imóvel real.
+projeto: exemplo
+unidade: mm
+origem: "canto inferior esquerdo da sala"
+pe_direito_padrao: {valor: 2600, status: confirmado, fonte: "teste"}
+ambientes:
+  - id: sala
+    nome: Sala
+    vertices:
+      - {x: 0,    y: 0,    status: confirmado, fonte: "teste"}
+      - {x: 4000, y: 0,    status: confirmado, fonte: "teste"}
+      - {x: 4000, y: 3500, status: confirmado, fonte: "teste"}
+      - {x: 0,    y: 3500, status: confirmado, fonte: "teste"}
+  - id: quarto
+    nome: Quarto
+    vertices:
+      - {x: 4150, y: 0,    status: confirmado, fonte: "teste"}
+      - {x: 7150, y: 0,    status: estimado,   fonte: "teste: proporção do desenho"}
+      - {x: 7150, y: 3000, status: estimado,   fonte: "teste: proporção do desenho"}
+      - {x: 4150, y: 3000, status: confirmado, fonte: "teste"}
+aberturas:
+  - id: porta-sala
+    tipo: porta
+    ambiente: sala
+    parede: 0
+    distancia: {valor: 300, status: confirmado, fonte: "teste"}
+    largura: {valor: 800, status: confirmado, fonte: "teste"}
+    altura: {valor: 2100, status: confirmado, fonte: "teste"}
+    sentido: {dobradica: inicio, abre_para: dentro}
+  - id: janela-quarto
+    tipo: janela
+    ambiente: quarto
+    parede: 2
+    distancia: {valor: 900, status: estimado, fonte: "teste"}
+    largura: {valor: 1200, status: confirmado, fonte: "teste"}
+    altura: {valor: 1200, status: confirmado, fonte: "teste"}
+    peitoril: {valor: null, status: desconhecido}
+pontos_fixos:
+  - id: tomada-1
+    tipo: tomada
+    ambiente: sala
+    posicao: {x: 2000, y: 3500, status: estimado, fonte: "teste"}
+    altura: {valor: 300, status: estimado, fonte: "teste"}

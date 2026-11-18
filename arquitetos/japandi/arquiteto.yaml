@@ -1,0 +1,47 @@
+# Persona FICTÍCIA. Valores = proposta inicial; revisar com as referências do usuário.
+id: japandi
+nome: "Estúdio Ma"
+estilo: Minimalista japandí
+estado: rascunho
+fonte: "proposta inicial do assistente (2026-11-17); a revisar com referências do usuário"
+resumo: >
+  Encontro do minimalismo japonês com o escandinavo: poucos objetos, linhas retas e baixas,
+  madeira clara, tons neutros quentes, vazio como elemento de projeto e luz difusa.
+
+paleta:
+  - {id: branco_arroz, nome: Branco arroz,   hex: "#F2EEE6", papel: base,     uso: "paredes e teto", tags: []}
+  - {id: carvalho,     nome: Carvalho claro, hex: "#C9AE8C", papel: base,     uso: "piso, marcenaria", tags: [madeira_clara]}
+  - {id: pedra,        nome: Pedra,          hex: "#B7B0A4", papel: apoio,    uso: "tecidos, tapetes", tags: []}
+  - {id: argila,       nome: Argila,         hex: "#A68A73", papel: apoio,    uso: "cerâmica, almofadas", tags: []}
+  - {id: carvao,       nome: Carvão,         hex: "#3A3632", papel: destaque, uso: "detalhes pontuais, pés, molduras finas", tags: [madeira_escura]}
+  - {id: salvia,       nome: Sálvia,         hex: "#9AA38C", papel: destaque, uso: "plantas, um tecido", tags: []}
+
+materiais:
+  - {id: carvalho_claro, nome: Carvalho / freijó claro, onde: [piso, marcenaria, moveis], uso: "madeira clara de veio discreto", tags: [madeira_clara]}
+  - {id: papel_arroz,    nome: Papel de arroz / tecido translúcido, onde: [luminarias], uso: "cúpulas difusoras", tags: []}
+  - {id: linho_lavado,   nome: Linho lavado, onde: [estofados, tecidos], uso: "estofados baixos, cortinas", tags: [linho]}
+  - {id: ceramica_fosca, nome: Cerâmica fosca artesanal, onde: [decoracao], uso: "poucos objetos, agrupados", tags: []}
+  - {id: madeira_escura, nome: Madeira ebanizada, onde: [moveis], uso: "contraponto pontual", tags: [madeira_escura]}
+
+iluminacao:
+  temperatura_k: {geral: 2700, tarefa: 3000, destaque: 2700}
+  estrategia: >
+    Luz difusa e baixa: cúpulas de papel, luminárias de piso, rasantes discretas. Nenhuma fonte
+    aparente ofuscando; a luz deve parecer vir das superfícies.
+
+luminarias:
+  - {id: pendente_papel, tipo: pendente,       descricao: "pendente de papel de arroz, forma orgânica", temperatura_k: 2700, tags: []}
+  - {id: piso_papel,     tipo: luminaria_piso, descricao: "luminária de piso baixa com difusor de papel", temperatura_k: 2700, tags: []}
+  - {id: embutido_baixo, tipo: embutido,       descricao: "embutidos de facho aberto, poucos e recuados", temperatura_k: 2700, tags: []}
+
+regras:
+  fazer:
+    - "deixar superfícies livres; cada objeto precisa de motivo"
+    - "móveis baixos, linhas retas, cantos suaves"
+    - "uma planta escultural por ambiente"
+    - "esconder tudo que é técnico (cabos, equipamentos) em marcenaria"
+  evitar:
+    - "cores saturadas e estampas"
+    - "metal brilhante e cromado"
+    - "excesso de objetos decorativos"
+  evitar_tags: [cor_saturada, estampa, cromado, latao, ornamento]

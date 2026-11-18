@@ -1,0 +1,48 @@
+# Persona FICTÍCIA. Valores = proposta inicial; revisar com as referências do usuário.
+id: brasileiro_contemporaneo
+nome: "Estúdio Terra"
+estilo: Brasileiro contemporâneo
+estado: rascunho
+fonte: "proposta inicial do assistente (2026-11-17); a revisar com referências do usuário"
+resumo: >
+  Madeiras brasileiras, fibras naturais e tons terrosos. Casa clara, ventilada, com marcenaria
+  bem desenhada, luz indireta e artesanato/design brasileiro como ponto de interesse.
+
+paleta:
+  - {id: areia,      nome: Areia,          hex: "#E6DCCB", papel: base,     uso: "paredes e teto", tags: []}
+  - {id: freijo,     nome: Freijó,         hex: "#B98B5E", papel: base,     uso: "marcenaria, painéis", tags: [madeira_brasileira]}
+  - {id: linho_cru,  nome: Linho cru,      hex: "#D8CDB8", papel: apoio,    uso: "estofados, cortinas", tags: [linho]}
+  - {id: verde_oliva, nome: Verde oliva,   hex: "#6B6B3A", papel: apoio,    uso: "uma parede, almofadas", tags: []}
+  - {id: terracota,  nome: Terracota,      hex: "#B5583A", papel: destaque, uso: "cerâmica, almofadas, tapete", tags: [terracota]}
+  - {id: caramelo,   nome: Caramelo,       hex: "#A8642C", papel: destaque, uso: "couro, poltrona", tags: [couro]}
+
+materiais:
+  - {id: freijo,     nome: Lâmina/maciço de freijó, onde: [marcenaria, moveis], uso: "marcenaria contínua, ripados", tags: [madeira_brasileira]}
+  - {id: cumaru,     nome: Cumaru, onde: [piso, moveis], uso: "piso ou mobiliário de apoio", tags: [madeira_brasileira]}
+  - {id: palhinha,   nome: Palhinha indiana / palha natural, onde: [moveis, marcenaria], uso: "portas de armário, encostos", tags: [palha]}
+  - {id: linho,      nome: Linho, onde: [estofados, tecidos], uso: "estofados e cortinas leves", tags: [linho]}
+  - {id: ceramica,   nome: Cerâmica artesanal, onde: [decoracao, parede], uso: "objetos, revestimento de destaque", tags: [terracota]}
+
+iluminacao:
+  temperatura_k: {geral: 2700, tarefa: 3500, destaque: 2700}
+  estrategia: >
+    Luz indireta embutida na marcenaria e no forro (sancas, fitas LED), complementada por
+    luminárias de fibra/madeira. Evitar luz central dura; várias camadas baixas.
+
+luminarias:
+  - {id: fita_marcenaria, tipo: fita_led,  descricao: "fita LED embutida em nichos e sob prateleiras", temperatura_k: 2700, tags: []}
+  - {id: pendente_fibra,  tipo: pendente,  descricao: "pendente de fibra natural (palha/rattan)", temperatura_k: 2700, tags: [palha]}
+  - {id: coluna_madeira,  tipo: coluna,    descricao: "luminária de piso de madeira com cúpula de linho", temperatura_k: 2700, tags: [madeira_brasileira, linho]}
+  - {id: sanca,           tipo: embutido,  descricao: "iluminação indireta em sanca/forro rebaixado", temperatura_k: 2700, tags: []}
+
+regras:
+  fazer:
+    - "marcenaria de piso a teto, contínua, com puxadores cava"
+    - "madeira em tom médio-claro; uma madeira dominante por ambiente"
+    - "uma peça de design ou artesanato brasileiro como protagonista"
+    - "tecidos naturais, texturas táteis"
+  evitar:
+    - "cromado, laca brilhante e plástico brilhante"
+    - "cinza frio dominante"
+    - "excesso de metal preto"
+  evitar_tags: [cromado, laca_brilho, plastico_brilhante, cinza_frio]

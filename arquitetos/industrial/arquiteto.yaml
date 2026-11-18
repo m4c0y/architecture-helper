@@ -1,0 +1,48 @@
+# Persona FICTÍCIA. Valores = proposta inicial; revisar com as referências do usuário.
+id: industrial
+nome: "Estúdio Oficina"
+estilo: Industrial
+estado: rascunho
+fonte: "proposta inicial do assistente (2026-11-17); a revisar com referências do usuário"
+resumo: >
+  Estrutura à mostra e materiais honestos: metal preto, madeira de tom médio, concreto e
+  tijolo. Pouca cor, contraste alto, luz quente e pontual que valoriza textura.
+
+paleta:
+  - {id: grafite,       nome: Grafite,          hex: "#2B2B2B", papel: base,     uso: "serralheria, trilhos, molduras", tags: [metal_preto]}
+  - {id: cimento,       nome: Cimento queimado, hex: "#9A9790", papel: base,     uso: "paredes de destaque, piso", tags: [concreto]}
+  - {id: off_white,     nome: Off-white quente, hex: "#ECE8E1", papel: apoio,    uso: "paredes e teto (rebate a luz)", tags: []}
+  - {id: madeira_media, nome: Madeira média,    hex: "#8A6142", papel: apoio,    uso: "tampos, prateleiras", tags: [madeira_media]}
+  - {id: tijolo,        nome: Tijolo,           hex: "#9C4F36", papel: destaque, uso: "uma parede ou objetos", tags: [tijolo]}
+  - {id: couro_conhaque, nome: Couro conhaque,  hex: "#8B4A25", papel: destaque, uso: "estofados, poltrona", tags: [couro]}
+
+materiais:
+  - {id: aco_preto,   nome: Aço carbono pintado preto fosco, onde: [moveis, luminarias, marcenaria], uso: "estruturas aparentes, pés, prateleiras", tags: [metal_preto]}
+  - {id: madeira_macica, nome: Madeira maciça de tom médio, onde: [moveis, marcenaria], uso: "tampos e prateleiras com veio aparente", tags: [madeira_media]}
+  - {id: cimento_queimado, nome: Cimento queimado / microcimento, onde: [parede, piso, bancada], uso: "uma superfície por ambiente, no máximo", tags: [concreto]}
+  - {id: tijolinho,  nome: Tijolinho aparente (plaqueta), onde: [parede], uso: "parede de destaque", tags: [tijolo]}
+  - {id: couro,      nome: Couro natural, onde: [estofados], uso: "poltronas, assentos", tags: [couro]}
+
+iluminacao:
+  temperatura_k: {geral: 3000, tarefa: 4000, destaque: 2700}
+  estrategia: >
+    Trilho aparente com spots direcionáveis no lugar de luz central; pendentes de metal sobre
+    mesas; poucas fontes difusas. Luz rasante em parede de textura (tijolo, cimento).
+
+luminarias:
+  - {id: trilho_spots,  tipo: trilho,   descricao: "trilho eletrificado preto com spots cilíndricos", temperatura_k: 3000, tags: [metal_preto]}
+  - {id: pendente_domo, tipo: pendente, descricao: "pendente domo de metal preto fosco", temperatura_k: 2700, tags: [metal_preto]}
+  - {id: articulada,    tipo: mesa,     descricao: "luminária de mesa articulada preta", temperatura_k: 4000, tags: [metal_preto]}
+  - {id: filamento,     tipo: pendente, descricao: "lâmpada de filamento aparente, fio têxtil", temperatura_k: 2200, tags: [filamento]}
+
+regras:
+  fazer:
+    - "deixar a estrutura aparente (parafusos, soldas, trilhos) como parte do desenho"
+    - "no máximo uma superfície de textura forte (tijolo OU cimento) por ambiente"
+    - "metal sempre preto fosco"
+    - "plantas grandes para quebrar a dureza"
+  evitar:
+    - "cromado e metais brilhantes"
+    - "ornamentos, molduras clássicas"
+    - "cores pastel e laca brilhante"
+  evitar_tags: [cromado, ornamento, pastel, laca_brilho]

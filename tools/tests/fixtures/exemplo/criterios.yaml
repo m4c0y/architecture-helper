@@ -1,0 +1,7 @@
+decisao: "teste"
+circulacao:
+  passagem_principal: 900
+  passagem_secundaria: 600
+  frente_armario: 700
+  frente_bancada: 900
+  atras_cadeira: 750

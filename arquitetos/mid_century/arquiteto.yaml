@@ -1,0 +1,48 @@
+# Persona FICTÍCIA. Valores = proposta inicial; revisar com as referências do usuário.
+id: mid_century
+nome: "Estúdio Atômico"
+estilo: Mid-century moderno
+estado: rascunho
+fonte: "proposta inicial do assistente (2026-11-17); a revisar com referências do usuário"
+resumo: >
+  Modernismo dos anos 50–60: nogueira, pés palito, formas orgânicas, latão e cores de destaque
+  (mostarda, verde-garrafa, laranja queimado). Otimista, gráfico e aconchegante.
+
+paleta:
+  - {id: creme,        nome: Creme,           hex: "#EFE6D2", papel: base,     uso: "paredes e teto", tags: []}
+  - {id: nogueira,     nome: Nogueira,        hex: "#5C3A21", papel: base,     uso: "móveis, marcenaria", tags: [nogueira]}
+  - {id: verde_garrafa, nome: Verde-garrafa,  hex: "#2F4A3A", papel: apoio,    uso: "uma parede, estofado", tags: []}
+  - {id: mostarda,     nome: Mostarda,        hex: "#C9962B", papel: destaque, uso: "poltrona, almofadas", tags: [cor_saturada]}
+  - {id: laranja,      nome: Laranja queimado, hex: "#C0592B", papel: destaque, uso: "objetos, cerâmica", tags: [cor_saturada]}
+  - {id: latao,        nome: Latão escovado,  hex: "#B08D57", papel: destaque, uso: "luminárias, puxadores", tags: [latao]}
+
+materiais:
+  - {id: nogueira,   nome: Nogueira (lâmina ou maciça), onde: [moveis, marcenaria], uso: "aparadores, racks, pés palito", tags: [nogueira]}
+  - {id: latao,      nome: Latão escovado, onde: [luminarias, moveis], uso: "detalhes, hastes, puxadores", tags: [latao]}
+  - {id: boucle,     nome: Bouclê / veludo, onde: [estofados], uso: "poltronas de forma orgânica", tags: []}
+  - {id: terrazzo,   nome: Terrazzo, onde: [piso, bancada, decoracao], uso: "tampos e objetos", tags: [estampa]}
+  - {id: vidro_opal, nome: Vidro opalino, onde: [luminarias], uso: "globos difusores", tags: []}
+
+iluminacao:
+  temperatura_k: {geral: 2700, tarefa: 3500, destaque: 2700}
+  estrategia: >
+    Luminárias como peças de design protagonistas (arco, globo, sputnik), complementadas por
+    luz geral suave. Pontos de luz em alturas variadas.
+
+luminarias:
+  - {id: arco,       tipo: luminaria_piso, descricao: "luminária de arco com cúpula metálica sobre o sofá", temperatura_k: 2700, tags: [latao]}
+  - {id: globo_opal, tipo: pendente,       descricao: "pendente globo de vidro opalino com haste de latão", temperatura_k: 2700, tags: [latao]}
+  - {id: tripe,      tipo: coluna,         descricao: "coluna tripé de madeira com cúpula de tecido", temperatura_k: 2700, tags: [nogueira]}
+  - {id: abajur_cogumelo, tipo: mesa,      descricao: "abajur cogumelo", temperatura_k: 2700, tags: [cor_saturada]}
+
+regras:
+  fazer:
+    - "móveis sobre pés finos, deixando o piso visível"
+    - "uma ou duas cores de destaque por ambiente, repetidas em 2–3 pontos"
+    - "uma luminária icônica como protagonista"
+    - "formas orgânicas convivendo com linhas retas"
+  evitar:
+    - "rústico pesado, madeira de demolição"
+    - "cinza frio dominante"
+    - "metal preto industrial em excesso"
+  evitar_tags: [rustico, cinza_frio, tijolo]

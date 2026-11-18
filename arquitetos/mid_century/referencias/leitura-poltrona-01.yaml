@@ -1,0 +1,50 @@
+id: leitura-poltrona-01
+arquivo: leitura-poltrona-01.jpg
+origem: Unsplash, https://unsplash.com/photos/leather-lounge-chair-in-cozy-room-qnYCGP8Xd0g (baixada em 2026-11-18,
+  1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Clay Banks (https://unsplash.com/@claybanks) no Unsplash
+tipo: movel
+ilustra:
+- poltrona de couro com pufe
+- luminária de piso
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: mid_century
+    peso: alto
+  elementos:
+  - tipo: movel
+    descricao: poltrona lounge de couro caramelo com pufe, casco em madeira curvada
+    tags:
+    - couro
+    - nogueira
+  - tipo: luminaria
+    descricao: luminária de piso com haste preta e cúpula de linho
+    tags:
+    - metal_preto
+    - linho
+  - tipo: objeto
+    descricao: quadro abstrato colorido
+    tags:
+    - cor_saturada
+  - tipo: movel
+    descricao: mesa lateral em bloco de metal escovado
+    tags: []
+  luz: natural lateral suave; luminária como ponto de leitura
+  composicao: 'canto de leitura: poltrona + luminária + mesa lateral, parede lisa'
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#352414'
+      fracao: 0.225
+    - hex: '#88765D'
+      fracao: 0.223
+    - hex: '#7B644A'
+      fracao: 0.161
+    - hex: '#A19483'
+      fracao: 0.142
+    - hex: '#624F36'
+      fracao: 0.134
+    - hex: '#C2BCAC'
+      fracao: 0.115

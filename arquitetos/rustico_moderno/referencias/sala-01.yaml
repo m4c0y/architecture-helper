@@ -1,0 +1,55 @@
+id: sala-01
+arquivo: sala-01.jpg
+origem: Unsplash, https://unsplash.com/photos/cozy-living-room-with-plush-sofa-and-wooden-chest-E0pZm6b2z7A (baixada
+  em 2026-11-18, 1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Clay Banks (https://unsplash.com/@claybanks) no Unsplash
+tipo: ambiente
+ilustra:
+- sala com sofá e baú de madeira
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: rustico_moderno
+    peso: medio
+  - estilo: contemporâneo
+    peso: medio
+  elementos:
+  - tipo: movel
+    descricao: sofá de veludo verde
+    tags:
+    - cor_saturada
+  - tipo: movel
+    descricao: baú de madeira como mesa de centro
+    tags:
+    - madeira_media
+    - rustico
+  - tipo: objeto
+    descricao: tapete persa desbotado
+    tags:
+    - estampa
+  - tipo: objeto
+    descricao: cortinas de linho cru
+    tags:
+    - linho
+  - tipo: piso
+    descricao: piso de madeira média
+    tags:
+    - madeira_media
+  luz: natural farta; base clara
+  composicao: estar integrado ao jantar; peças com história sobre base branca
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#C1B5A4'
+      fracao: 0.204
+    - hex: '#584730'
+      fracao: 0.199
+    - hex: '#84765E'
+      fracao: 0.18
+    - hex: '#D4CEC2'
+      fracao: 0.177
+    - hex: '#A58B6D'
+      fracao: 0.125
+    - hex: '#E5E3DD'
+      fracao: 0.115

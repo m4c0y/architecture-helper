@@ -1,0 +1,55 @@
+id: banco-janela-01
+arquivo: banco-janela-01.jpg
+origem: Unsplash, https://unsplash.com/photos/brown-wooden-bench-near-window-SoNaNOFT974 (baixada em 2026-11-18,
+  1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Daniel Chen (https://unsplash.com/@dchestudio) no Unsplash
+tipo: movel
+ilustra:
+- banco de madeira junto à janela
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: japandi
+    peso: alto
+  - estilo: rustico_moderno
+    peso: baixo
+  elementos:
+  - tipo: movel
+    descricao: mesa baixa de madeira bruta
+    tags:
+    - madeira_media
+    - rustico
+  - tipo: objeto
+    descricao: almofadas de piso em palha trançada
+    tags:
+    - palha
+  - tipo: objeto
+    descricao: galho seco escultural em vaso
+    tags:
+    - madeira_escura
+  - tipo: revestimento
+    descricao: janela redonda grande
+    tags:
+    - metal_preto
+  - tipo: piso
+    descricao: piso de madeira escura
+    tags:
+    - madeira_escura
+  luz: natural rasante pela janela redonda
+  composicao: poucos objetos baixos agrupados; parede branca vazia
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#342C1C'
+      fracao: 0.205
+    - hex: '#928D83'
+      fracao: 0.184
+    - hex: '#55574D'
+      fracao: 0.169
+    - hex: '#755D45'
+      fracao: 0.159
+    - hex: '#C1BFB9'
+      fracao: 0.148
+    - hex: '#E5E5E3'
+      fracao: 0.136

@@ -1,0 +1,35 @@
+# Vocabulário de tags compartilhado por personas (arquiteto.yaml) e referências (<imagem>.yaml).
+# O archtools recusa tag fora desta lista — é o que faz `evitar_tags` e a comparação entre
+# referências e estilos funcionarem sem erro de digitação silencioso.
+# Tag nova: acrescentar aqui (com o que significa) e revisar os `evitar_tags` de cada persona.
+tags:
+  # metais
+  metal_preto: "aço/ferro pintado preto fosco"
+  cromado: "metal cromado ou espelhado"
+  latao: "latão, dourado escovado"
+  # madeiras
+  madeira_clara: "carvalho, freijó claro, pinus, faia"
+  madeira_media: "madeira de tom médio, veio aparente"
+  madeira_escura: "madeira escura ou ebanizada"
+  madeira_brasileira: "freijó, cumaru, peroba e outras espécies nacionais"
+  nogueira: "nogueira (tom quente, típico mid-century)"
+  # minerais e cerâmicos
+  concreto: "concreto aparente, cimento queimado, microcimento"
+  tijolo: "tijolo ou plaqueta aparente"
+  terracota: "terracota, cerâmica crua avermelhada"
+  pedra_natural: "pedra bruta ou levigada (ardósia, granito rústico, pedra-ferro, travertino)"
+  # fibras e tecidos
+  palha: "palhinha, rattan, fibras naturais trançadas"
+  linho: "linho, algodão cru, tecidos naturais lisos"
+  couro: "couro natural"
+  # luz
+  filamento: "lâmpada de filamento aparente"
+  # cor e superfície
+  cor_saturada: "cores intensas (vermelho, azul royal, amarelo puro...)"
+  pastel: "tons pastel"
+  cinza_frio: "cinzas azulados/frios"
+  laca_brilho: "laca ou pintura de alto brilho"
+  plastico_brilhante: "plástico brilhante"
+  estampa: "estampas, padronagens marcantes"
+  ornamento: "ornamentos, molduras clássicas, entalhes"
+  rustico: "acabamento rústico: madeira de demolição, marcas de uso, irregularidade aparente"

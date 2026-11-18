@@ -1,0 +1,45 @@
+id: galpao-janelas-01
+arquivo: galpao-janelas-01.jpg
+origem: Unsplash, https://unsplash.com/photos/industrial-warehouse-interior-with-grid-windows-gv22QMU22rI (baixada
+  em 2026-11-18, 1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Jason Leung (https://unsplash.com/@ninjason) no Unsplash
+tipo: revestimento
+ilustra:
+- janelas de serralheria em grade
+- piso de concreto
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: industrial
+    peso: alto
+  elementos:
+  - tipo: revestimento
+    descricao: janelas de serralheria preta em grade, grandes
+    tags:
+    - metal_preto
+  - tipo: piso
+    descricao: piso de concreto liso
+    tags:
+    - concreto
+  - tipo: revestimento
+    descricao: pilar e estrutura metálica preta aparente no teto
+    tags:
+    - metal_preto
+  luz: luz natural rasante entrando pelas janelas, sombras longas
+  composicao: 'arquitetura sem mobiliário: referência de esquadria e estrutura'
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#060508'
+      fracao: 0.231
+    - hex: '#716655'
+      fracao: 0.185
+    - hex: '#352E2A'
+      fracao: 0.156
+    - hex: '#1A1616'
+      fracao: 0.149
+    - hex: '#ADA694'
+      fracao: 0.146
+    - hex: '#D4DBCC'
+      fracao: 0.133

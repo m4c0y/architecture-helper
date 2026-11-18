@@ -1,0 +1,60 @@
+id: sala-salvador-01
+arquivo: sala-salvador-01.jpg
+origem: Unsplash, https://unsplash.com/photos/modern-living-room-with-comfortable-sofas-and-wooden-flooring-5BzyDJqp0c4
+  (baixada em 2026-11-18, 1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Alef Morais (https://unsplash.com/@alef_visuals) no Unsplash
+tipo: ambiente
+ilustra:
+- sala com piso de madeira (Salvador-BA)
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: brasileiro_contemporaneo
+    peso: alto
+  elementos:
+  - tipo: piso
+    descricao: deck de madeira brasileira
+    tags:
+    - madeira_brasileira
+  - tipo: revestimento
+    descricao: forro de madeira com treliça
+    tags:
+    - madeira_brasileira
+  - tipo: luminaria
+    descricao: pendentes de fibra natural trançada
+    tags:
+    - palha
+  - tipo: movel
+    descricao: sofás com estrutura de madeira e trançado
+    tags:
+    - madeira_brasileira
+    - palha
+  - tipo: movel
+    descricao: cadeiras de madeira com assento estampado geométrico
+    tags:
+    - estampa
+  - tipo: objeto
+    descricao: mesa de centro em tronco de madeira
+    tags:
+    - rustico
+  - tipo: objeto
+    descricao: jardim tropical integrado
+    tags: []
+  luz: natural filtrada + pendentes quentes
+  composicao: varanda/estar aberto ao jardim; madeira em piso e teto
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#301605'
+      fracao: 0.218
+    - hex: '#965F2E'
+      fracao: 0.215
+    - hex: '#582108'
+      fracao: 0.163
+    - hex: '#743B14'
+      fracao: 0.142
+    - hex: '#C99457'
+      fracao: 0.135
+    - hex: '#EEC38E'
+      fracao: 0.128

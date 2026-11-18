@@ -167,9 +167,62 @@ def cmd_estilo(pasta: Path, arquivo: Path | None, pasta_arqs: Path, ambiente: st
     return 0
 
 
+def cmd_referencias(caminho: Path, pasta_arqs: Path) -> int:
+    """Valida os YAML de referência de uma pasta (ou de todas as bibliotecas em arquitetos/)."""
+    from .estilo import carregar_arquitetos, carregar_vocabulario
+    from .referencias import carregar_pasta, cobertura, pastas_de_referencias, validar_referencias
+    vocab = carregar_vocabulario(pasta_arqs)
+    ids = set(carregar_arquitetos(pasta_arqs)) if pasta_arqs.exists() else set()
+    erros = 0
+    for pasta in pastas_de_referencias(caminho):
+        refs, achados = carregar_pasta(pasta)
+        achados += validar_referencias(refs, vocab, ids, str(pasta))
+        cob = cobertura(refs)
+        print()
+        print(f"## {pasta}: {len(refs)} referência(s)")
+        print("  por tipo: " + ", ".join(f"{t} {n}" for t, n in cob.items()))
+        for a in sorted(achados, key=lambda a: a.nivel):
+            print(f"  {a}")
+        erros += sum(a.nivel == "erro" for a in achados)
+    print()
+    print(f"Erros: {erros}")
+    return 1 if erros else 0
+
+
+def cmd_paleta(imagem: Path, n_cores: int, arquiteto: str | None, pasta_arqs: Path, gravar: bool) -> int:
+    """Extrai a paleta de uma imagem (median cut) e, opcionalmente, compara com uma persona."""
+    from .estilo import carregar_arquitetos
+    from .referencias import extrair_paleta, gravar_paleta, mais_proxima
+    if not imagem.is_file():
+        sys.exit(f"ERRO: imagem {imagem} não encontrada")
+    cores = extrair_paleta(imagem, n_cores)
+    arq = None
+    if arquiteto:
+        arqs = carregar_arquitetos(pasta_arqs)
+        if arquiteto not in arqs:
+            sys.exit(f"ERRO: arquiteto '{arquiteto}' não existe ({', '.join(arqs)})")
+        arq = arqs[arquiteto]
+    print(f"Paleta de {imagem.name} ({n_cores} cores, median cut):")
+    for c in cores:
+        extra = ""
+        if arq:
+            cid, de = mais_proxima(c.hex, arq)
+            extra = f"   ≈ {cid} (ΔE {de})"
+        print(f"  {c.hex}  {c.fracao:6.1%}{extra}")
+    if arq:
+        print("ΔE (CIE76): ~2 quase igual; <10 parecida; >10 claramente diferente.")
+    if gravar:
+        sidecar = imagem.with_suffix(".yaml")
+        if not sidecar.exists():
+            sys.exit(f"ERRO: {sidecar} não existe — crie o YAML da referência antes de gravar a paleta")
+        gravar_paleta(sidecar, cores, f"archtools paleta --cores {n_cores}")
+        print(f"gravado: {sidecar} (analise.paleta)")
+    return 0
+
+
 COMANDOS = {"validar": cmd_validar, "areas": cmd_areas,
             "planta": cmd_planta, "pendencias": cmd_pendencias, "layout": None, "cena": None,
-            "estilo": None}
+            "estilo": None, "referencias": None, "paleta": None}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -178,7 +231,9 @@ def main(argv: list[str] | None = None) -> int:
         sys.stderr.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser(prog="archtools", description=__doc__)
     p.add_argument("comando", choices=COMANDOS)
-    p.add_argument("projeto", type=Path, help="pasta do projeto (contém geometria.yaml)")
+    p.add_argument("projeto", type=Path,
+                   help="pasta do projeto (contém geometria.yaml); em 'referencias', a pasta de "
+                        "referências ou arquitetos/; em 'paleta', a imagem")
     p.add_argument("--layout", type=Path, help="(layout) arquivo layout.yaml")
     p.add_argument("--recorte", help="(layout) id do ambiente para dar zoom na planta")
     p.add_argument("--cameras", nargs="*", default=[], help="(cena) ids de ambientes para gerar câmeras")
@@ -186,11 +241,18 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--arquitetos", type=Path, default=Path("arquitetos"), help="(estilo) pasta dos arquitetos")
     p.add_argument("--ambiente", help="(estilo) resolver só este ambiente")
     p.add_argument("--acabamentos", type=Path, help="(cena) acabamentos.yaml (padrão: junto do layout)")
+    p.add_argument("--cores", type=int, default=6, help="(paleta) número de cores")
+    p.add_argument("--arquiteto", help="(paleta) comparar com a paleta desta persona")
+    p.add_argument("--gravar", action="store_true", help="(paleta) gravar em analise.paleta do YAML da imagem")
     args = p.parse_args(argv)
     if args.comando == "layout":
         return cmd_layout(args.projeto, args.layout, args.recorte)
     if args.comando == "cena":
         return cmd_cena(args.projeto, args.layout, args.cameras, args.acabamentos, args.arquitetos)
+    if args.comando == "referencias":
+        return cmd_referencias(args.projeto, args.arquitetos)
+    if args.comando == "paleta":
+        return cmd_paleta(args.projeto, args.cores, args.arquiteto, args.arquitetos, args.gravar)
     if args.comando == "estilo":
         return cmd_estilo(args.projeto, args.estilo, args.arquitetos, args.ambiente)
     return COMANDOS[args.comando](args.projeto)

@@ -1,0 +1,56 @@
+id: sala-lareira-01
+arquivo: sala-lareira-01.jpg
+origem: Unsplash, https://unsplash.com/photos/modern-living-room-with-fireplace-and-large-windows-IE0m2PUI4Fg (baixada
+  em 2026-11-18, 1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Clay Banks (https://unsplash.com/@claybanks) no Unsplash
+tipo: ambiente
+ilustra:
+- sala com lareira e janelões
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: mid_century
+    peso: medio
+  - estilo: minimalista
+    peso: medio
+  - estilo: brasileiro_contemporaneo
+    peso: baixo
+  elementos:
+  - tipo: revestimento
+    descricao: esquadrias de madeira clara do piso ao teto
+    tags:
+    - madeira_clara
+  - tipo: movel
+    descricao: poltronas baixas de madeira com encosto estofado
+    tags:
+    - madeira_media
+  - tipo: movel
+    descricao: mesa de centro de madeira maciça escura
+    tags:
+    - madeira_escura
+  - tipo: objeto
+    descricao: quadro abstrato grande verde e preto
+    tags:
+    - estampa
+  - tipo: revestimento
+    descricao: lareira com moldura preta em parede lisa
+    tags:
+    - metal_preto
+  luz: natural difusa pelos janelões; sem luminária aparente
+  composicao: simétrica em torno da lareira; peças baixas; muito ar entre os móveis
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#C0BAAE'
+      fracao: 0.203
+    - hex: '#5D452C'
+      fracao: 0.201
+    - hex: '#B3AB9D'
+      fracao: 0.19
+    - hex: '#887F6C'
+      fracao: 0.17
+    - hex: '#A28D73'
+      fracao: 0.123
+    - hex: '#CCC9C0'
+      fracao: 0.114

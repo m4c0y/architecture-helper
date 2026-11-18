@@ -118,12 +118,30 @@ class Selecao(_Base):
     ambientes: dict[str, Escolha] = Field(default_factory=dict)
 
 
+def carregar_vocabulario(pasta_arquitetos: Path) -> set[str] | None:
+    """Tags permitidas (`arquitetos/tags.yaml`); None se o arquivo não existir."""
+    f = Path(pasta_arquitetos) / "tags.yaml"
+    if not f.exists():
+        return None
+    return set((yaml.safe_load(f.read_text(encoding="utf-8")) or {}).get("tags") or {})
+
+
+def tags_usadas(a: Arquiteto) -> set[str]:
+    usadas = {t for grupo in (a.paleta, a.materiais, a.luminarias) for i in grupo for t in i.tags}
+    return usadas | set(a.regras.evitar_tags)
+
+
 def carregar_arquitetos(pasta: Path) -> dict[str, Arquiteto]:
+    """Carrega `<pasta>/*/arquiteto.yaml`. Com `tags.yaml`, toda tag precisa estar no vocabulário
+    (senão `evitar_tags` falharia em silêncio por um erro de digitação)."""
+    vocab = carregar_vocabulario(pasta)
     arqs: dict[str, Arquiteto] = {}
     for f in sorted(Path(pasta).glob("*/arquiteto.yaml")):
         a = Arquiteto.model_validate(yaml.safe_load(f.read_text(encoding="utf-8")))
         if a.id != f.parent.name:
             raise ValueError(f"{f}: id '{a.id}' difere da pasta '{f.parent.name}'")
+        if vocab is not None and (fora := sorted(tags_usadas(a) - vocab)):
+            raise ValueError(f"{f}: tags fora do vocabulário ({pasta}/tags.yaml): {', '.join(fora)}")
         arqs[a.id] = a
     return arqs
 

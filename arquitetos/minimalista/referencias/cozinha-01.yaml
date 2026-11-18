@@ -1,0 +1,47 @@
+id: cozinha-01
+arquivo: cozinha-01.jpg
+origem: Unsplash, https://unsplash.com/photos/white-wooden-kitchen-cabinet-over-white-kitchen-counter-gijwI4X-7ig
+  (baixada em 2026-11-18, 1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Simona Sergi (https://unsplash.com/@i_am_simoesse) no Unsplash
+tipo: ambiente
+ilustra:
+- cozinha branca
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: minimalista
+    peso: alto
+  elementos:
+  - tipo: movel
+    descricao: armários brancos lisos do piso ao teto, sem puxador aparente
+    tags: []
+  - tipo: revestimento
+    descricao: frontão de pedra branca com veios
+    tags:
+    - pedra_natural
+  - tipo: objeto
+    descricao: geladeira e fogão em inox
+    tags:
+    - cromado
+  - tipo: piso
+    descricao: piso de madeira clara
+    tags:
+    - madeira_clara
+  luz: natural difusa; tudo branco
+  composicao: planos contínuos e alinhados; nada à vista nas bancadas
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#EBECEA'
+      fracao: 0.198
+    - hex: '#DDDAD4'
+      fracao: 0.192
+    - hex: '#D6D4CE'
+      fracao: 0.182
+    - hex: '#E5E4E1'
+      fracao: 0.163
+    - hex: '#A0988D'
+      fracao: 0.151
+    - hex: '#F3F4F4'
+      fracao: 0.113

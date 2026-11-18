@@ -31,6 +31,7 @@ pelas ferramentas determinísticas em `tools/` (pacote `archtools`), nunca "de c
 ```
 tools/                      pacote Python archtools (determinístico, com testes)
 arquitetos/<id>/            personas de estilo FICTÍCIAS (persona.md + arquiteto.yaml + referencias/)
+arquitetos/tags.yaml        vocabulário de tags (personas e referências)
 projetos/<nome>/
   geometria.yaml            envelope: ambientes, aberturas, pé-direito, pontos fixos (FONTE DA VERDADE)
   layout.yaml               móveis aprovados (FONTE DA VERDADE do mobiliário; coords locais do ambiente)
@@ -46,7 +47,7 @@ projetos/<nome>/
   propostas/                variações ainda não aprovadas (promovidas ficam com LEIA-ME "arquivada")
   saidas/                   GERADO: planta.png/svg, planta-layout.*, cena.json, 3d/ (renders + modelo.blend)
 blender/construir_cena.py   lê cena.json e monta/renderiza no Blender (não calcula geometria)
-.claude/skills/             procedimentos: ingerir-planta, validar-projeto, registrar-decisao, arquiteto
+.claude/skills/             procedimentos: ingerir-planta, validar-projeto, registrar-decisao, arquiteto, referencia
 ```
 
 ## Comandos (rodar a partir da raiz do repositório)
@@ -61,6 +62,8 @@ uv run --project tools archtools cena projetos/apartamento --cameras dorm2   # s
 uv run --project tools archtools estilo projetos/apartamento [--estilo <proposta>/estilo.yaml] [--ambiente dorm2]
 & "C:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python blender/construir_cena.py -- `
     projetos/apartamento/saidas/cena.json projetos/apartamento/saidas/3d [--cameras dorm2-se] [--res 1280x720] [--motor eevee|cycles] [--periodo dia|noite|ambos]
+uv run --project tools archtools referencias arquitetos                       # valida bibliotecas de referência
+uv run --project tools archtools paleta <imagem> [--arquiteto <id>] [--gravar]  # paleta por script (median cut)
 uv run --project tools pytest tools/tests -q
 ```
 

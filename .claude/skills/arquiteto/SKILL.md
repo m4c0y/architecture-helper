@@ -12,7 +12,12 @@ O usuário pode pedir, em qualquer combinação:
 - **comparar:** várias combinações para o mesmo alvo → uma proposta por combinação.
 
 Se faltar algo (qual ambiente? quem é principal?), pergunte. Arquitetos disponíveis:
-`uv run --project tools archtools estilo projetos/<p>`.
+`uv run --project tools archtools estilo projetos/<p>` (catálogo em `arquitetos/README.md`).
+
+**Usuário sem estilo definido:** parta das referências que ele marcou como gosto/não gosto
+(skill `referencia`): compare as tags dos elementos e as influências observadas com cada
+persona (`arquiteto.yaml` + seção "Combina com" de `persona.md`) e proponha 2–3 candidatos,
+explicando o porquê com essas evidências. Depois, uma proposta por candidato.
 
 ## 2. Montar a(s) proposta(s)
 Para cada combinação, criar `projetos/<p>/propostas/<ambiente>-<principal>[-<acento>]/`:
@@ -29,8 +34,8 @@ listar. Itens excluídos por conflito não entram na proposta (o principal manda
 quiser um deles mesmo assim, isso é uma exceção explícita registrada na decisão.
 
 ## 4. Escrever como o arquiteto
-Ler `arquitetos/<principal>/persona.md` (e as dos acentos) e escrever o `LEIA-ME.md` na voz e
-no método do principal:
+Ler `arquitetos/<principal>/persona.md` (e as dos acentos) e as referências do estilo
+(`arquitetos/<id>/referencias/*.yaml`), e escrever o `LEIA-ME.md` na voz e no método do principal:
 - conceito do ambiente em 2–3 frases;
 - cores por superfície (paredes, teto, marcenaria, estofados) com o hex e a origem;
 - materiais por elemento;
@@ -38,13 +43,18 @@ no método do principal:
 - luminárias e objetos que **entram no layout** (posição/altura validadas pelo `archtools layout`)
   e o que é `decorativo` (livre para a imagem compor, mas declarado);
 - o que muda nos móveis já aprovados e o que combina/não combina com o estilo;
-- perguntas da persona ao usuário (seção "Perguntas que faço").
+- perguntas da persona ao usuário (seção "Perguntas que faço");
+- antes de entregar, revisar a proposta contra a seção "Erros comuns" de cada persona envolvida.
 
 ## 5. Regras que valem para todas as personas
 - Não inventar medidas nem alterar `geometria.yaml`. Medidas de produtos = `estimado` com fonte.
 - Toda luminária/objeto que for aparecer em imagem entra antes no layout.
 - Persona em `rascunho` → avisar o usuário que os valores do arquiteto ainda não foram revisados.
 - Personas são **fictícias**; não atribuir a elas nomes de arquitetos reais.
+- Os dados concretos vêm de `arquiteto.yaml` (via `archtools estilo`); `persona.md` descreve como
+  o estilo pensa e não substitui os dados.
+- Como **acento**, a persona contribui só com destaques, materiais e luminárias, e respeita o que
+  o principal evita.
 
 ## 6. Aprovação
 Usuário aprova uma proposta → copiar o `estilo.yaml` (e `layout.yaml`, se houver) para
@@ -53,5 +63,9 @@ em `propostas/` com LEIA-ME "arquivada" (ou são excluídas, se o usuário pedir
 
 ## 7. Editar um arquiteto
 Mudanças em `arquitetos/<id>/arquiteto.yaml` (cores, regras, tags) só com pedido do usuário.
-Tags novas: atualizar o vocabulário em `arquitetos/README.md` e revisar `evitar_tags` dos demais.
-Rodar `uv run --project tools pytest tools/tests -q` depois.
+Tags novas: acrescentar em `arquitetos/tags.yaml` e revisar `evitar_tags` dos demais.
+Calibração com referências (skill `referencia`, seção 7) gera **propostas** de ajuste; a persona
+só passa de `rascunho` para `aprovado` quando o usuário revisar e aprovar.
+Estilo novo: criar `arquitetos/<id>/` com `arquiteto.yaml`, `persona.md` (mesmas seções das
+demais) e `referencias/`; acrescentar na tabela de `arquitetos/README.md`.
+Rodar `uv run --project tools pytest tools/tests -q` e `archtools referencias arquitetos` depois.

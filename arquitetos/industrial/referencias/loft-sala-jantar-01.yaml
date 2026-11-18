@@ -1,0 +1,73 @@
+id: loft-sala-jantar-01
+arquivo: loft-sala-jantar-01.jpg
+origem: Unsplash, https://unsplash.com/photos/industrial-loft-with-dining-area-s95oB2n9jng (baixada em 2026-11-18,
+  1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Aaron Huber (https://unsplash.com/@aahubs) no Unsplash
+tipo: ambiente
+ilustra:
+- loft com tijolo aparente e vigas de madeira
+- trilhos com spots e eletrocalha aparente
+- integração sala, jantar e cozinha
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: industrial
+    peso: alto
+  - estilo: mid_century
+    peso: medio
+  elementos:
+  - tipo: revestimento
+    descricao: parede inteira de tijolo aparente claro
+    tags:
+    - tijolo
+  - tipo: revestimento
+    descricao: forro de vigas e tábuas de madeira escura, dutos aparentes
+    tags:
+    - madeira_escura
+  - tipo: piso
+    descricao: piso de concreto polido escuro
+    tags:
+    - concreto
+  - tipo: luminaria
+    descricao: trilhos pretos com spots e lâmpadas aparentes
+    tags:
+    - metal_preto
+    - filamento
+  - tipo: luminaria
+    descricao: pendente de arco com cúpula cromada sobre o sofá
+    tags:
+    - cromado
+  - tipo: movel
+    descricao: sofá de couro preto capitonê
+    tags:
+    - couro
+  - tipo: movel
+    descricao: mesa e cadeiras de madeira com assento estofado, linhas mid-century
+    tags:
+    - madeira_media
+  - tipo: objeto
+    descricao: tapete persa estampado em tons terrosos
+    tags:
+    - estampa
+  - tipo: objeto
+    descricao: guarda-corpo de mezanino e escada caracol em metal preto
+    tags:
+    - metal_preto
+  luz: natural lateral pelas janelas altas + pontos quentes dos trilhos; contraste alto
+  composicao: pé-direito duplo, profundidade em eixo; tijolo como única textura forte de parede
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#0E0E0B'
+      fracao: 0.217
+    - hex: '#56463D'
+      fracao: 0.211
+    - hex: '#78675E'
+      fracao: 0.164
+    - hex: '#201D19'
+      fracao: 0.158
+    - hex: '#382B24'
+      fracao: 0.142
+    - hex: '#9F8F86'
+      fracao: 0.108

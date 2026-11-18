@@ -1,0 +1,49 @@
+id: sala-portas-correr-01
+arquivo: sala-portas-correr-01.jpg
+origem: Unsplash, https://unsplash.com/photos/an-empty-room-with-sliding-doors-and-windows-_bpLpkLWVxU (baixada
+  em 2026-11-18, 1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Viviana Nysaether (https://unsplash.com/@viviana_nysaether) no Unsplash
+tipo: ambiente
+ilustra:
+- ambiente vazio com portas de correr
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: japonês tradicional
+    peso: alto
+  - estilo: japandi
+    peso: medio
+  elementos:
+  - tipo: revestimento
+    descricao: portas de correr shoji com papel translúcido
+    tags:
+    - madeira_clara
+  - tipo: piso
+    descricao: piso de tatami
+    tags:
+    - palha
+  - tipo: revestimento
+    descricao: forro e estrutura de madeira clara aparente
+    tags:
+    - madeira_clara
+  - tipo: luminaria
+    descricao: luminária de piso baixa com difusor de papel
+    tags: []
+  luz: natural filtrada pelo papel; sombras geométricas no piso
+  composicao: vazio total; a arquitetura de madeira é o ambiente
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#835C3B'
+      fracao: 0.208
+    - hex: '#361B09'
+      fracao: 0.184
+    - hex: '#622B03'
+      fracao: 0.18
+    - hex: '#6C370F'
+      fracao: 0.167
+    - hex: '#A09783'
+      fracao: 0.146
+    - hex: '#D5D1C3'
+      fracao: 0.114

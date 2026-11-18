@@ -1,0 +1,54 @@
+id: estar-jantar-01
+arquivo: estar-jantar-01.jpg
+origem: Unsplash, https://unsplash.com/photos/modern-dining-and-living-area-with-large-windows-y8j0gmhtS-4 (baixada
+  em 2026-11-18, 1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Clay Banks (https://unsplash.com/@claybanks) no Unsplash
+tipo: ambiente
+ilustra:
+- estar e jantar integrados com janelões
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: contemporâneo
+    peso: alto
+  - estilo: minimalista
+    peso: medio
+  elementos:
+  - tipo: revestimento
+    descricao: esquadrias pretas em módulos repetidos
+    tags:
+    - metal_preto
+  - tipo: piso
+    descricao: piso de carvalho claro
+    tags:
+    - madeira_clara
+  - tipo: movel
+    descricao: mesa de jantar de madeira maciça clara
+    tags:
+    - madeira_clara
+  - tipo: luminaria
+    descricao: lustres e pendentes de latão
+    tags:
+    - latao
+  - tipo: movel
+    descricao: cadeiras estofadas em tecido claro
+    tags:
+    - linho
+  luz: natural abundante; pé-direito alto
+  composicao: planta aberta alinhada pelas janelas; paleta branca e madeira
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#BBB2A4'
+      fracao: 0.244
+    - hex: '#6C5033'
+      fracao: 0.197
+    - hex: '#C6C1B5'
+      fracao: 0.16
+    - hex: '#9E8C74'
+      fracao: 0.154
+    - hex: '#D6D4CC'
+      fracao: 0.123
+    - hex: '#B19E86'
+      fracao: 0.122

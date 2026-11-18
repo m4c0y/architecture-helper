@@ -1,0 +1,48 @@
+# Persona FICTÍCIA. Valores = proposta inicial; revisar com as referências do usuário.
+id: minimalista
+nome: "Ateliê Linha"
+estilo: Minimalista
+estado: rascunho
+fonte: "proposta inicial do assistente (2026-11-18); a revisar com referências do usuário"
+resumo: >
+  Menos elementos, mais precisão. Planos contínuos, marcenaria lisa sem puxador aparente,
+  quase monocromático (branco, cinza quente, preto pontual), luz indireta integrada à
+  arquitetura. O que aparece é escolhido; o resto fica fechado.
+
+paleta:
+  - {id: branco_gelo,  nome: Branco gelo,      hex: "#F4F3F0", papel: base,     uso: "paredes, teto, marcenaria", tags: []}
+  - {id: cinza_quente, nome: Cinza quente,     hex: "#C8C4BC", papel: base,     uso: "piso, estofados, superfícies grandes", tags: []}
+  - {id: grafite_fosco, nome: Grafite fosco,   hex: "#4A4846", papel: apoio,    uso: "uma superfície ou bloco de marcenaria", tags: []}
+  - {id: preto,        nome: Preto fosco,      hex: "#1E1E1E", papel: destaque, uso: "perfis finos, metais, uma peça gráfica", tags: [metal_preto]}
+  - {id: carvalho_natural, nome: Carvalho natural, hex: "#BFA27E", papel: destaque, uso: "um único elemento de madeira (tampo, banco)", tags: [madeira_clara]}
+
+materiais:
+  - {id: laca_fosca,    nome: Laca fosca / MDF pintado fosco, onde: [marcenaria, moveis], uso: "portas lisas, fecho toque, sem puxador aparente", tags: []}
+  - {id: microcimento,  nome: Microcimento claro, onde: [piso, parede, bancada], uso: "superfícies contínuas sem rejunte", tags: [concreto]}
+  - {id: aco_preto_fino, nome: Perfil de aço preto fino, onde: [moveis, luminarias], uso: "estruturas esbeltas, pés, molduras", tags: [metal_preto]}
+  - {id: carvalho_liso, nome: Carvalho de veio discreto, onde: [moveis, marcenaria], uso: "um único elemento quente", tags: [madeira_clara]}
+  - {id: tecido_liso,   nome: Tecido liso de trama fechada, onde: [estofados, tecidos], uso: "estofados de linhas retas, cortina em trilho embutido", tags: [linho]}
+
+iluminacao:
+  temperatura_k: {geral: 3000, tarefa: 3500, destaque: 3000}
+  estrategia: >
+    Luz integrada à arquitetura: fita LED em sancas, nichos e sob marcenaria; embutidos
+    pequenos e alinhados. Luminárias aparentes só se forem uma peça gráfica, uma por ambiente.
+
+luminarias:
+  - {id: fita_sanca,     tipo: fita_led, descricao: "fita LED em sanca ou rasgo de forro (luz indireta)", temperatura_k: 3000, tags: []}
+  - {id: embutido_mini,  tipo: embutido, descricao: "embutido pequeno de recorte quadrado, alinhado à modulação", temperatura_k: 3000, tags: []}
+  - {id: pendente_linear, tipo: pendente, descricao: "pendente linear preto, perfil fino", temperatura_k: 3000, tags: [metal_preto]}
+  - {id: fita_marcenaria, tipo: fita_led, descricao: "LED sob prateleiras e nichos", temperatura_k: 3000, tags: []}
+
+regras:
+  fazer:
+    - "um plano contínuo vale mais que várias peças"
+    - "armazenamento fechado do piso ao teto; nada técnico à vista"
+    - "alinhar tudo: portas, nichos, luminárias e tomadas na mesma modulação"
+    - "no máximo um elemento de madeira e uma peça gráfica por ambiente"
+  evitar:
+    - "estampas, ornamentos, cores saturadas"
+    - "objetos decorativos soltos em quantidade"
+    - "acabamento rústico ou irregular"
+  evitar_tags: [estampa, ornamento, cor_saturada, rustico, palha, latao]

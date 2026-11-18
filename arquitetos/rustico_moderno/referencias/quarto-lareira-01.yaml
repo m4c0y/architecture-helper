@@ -1,0 +1,51 @@
+id: quarto-lareira-01
+arquivo: quarto-lareira-01.jpg
+origem: Unsplash, https://unsplash.com/photos/spacious-bedroom-with-a-fireplace-and-large-bed-SpDKzy83DmY (baixada
+  em 2026-11-18, 1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Clay Banks (https://unsplash.com/@claybanks) no Unsplash
+tipo: ambiente
+ilustra:
+- quarto amplo com lareira
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: rustico_moderno
+    peso: alto
+  elementos:
+  - tipo: revestimento
+    descricao: viga de madeira aparente no teto inclinado
+    tags:
+    - madeira_media
+  - tipo: revestimento
+    descricao: lareira com moldura de pedra clara
+    tags:
+    - pedra_natural
+  - tipo: movel
+    descricao: cômoda e criados de madeira escura
+    tags:
+    - madeira_escura
+  - tipo: objeto
+    descricao: tapete felpudo e peles claras
+    tags:
+    - linho
+  - tipo: movel
+    descricao: cabeceira estofada capitonê
+    tags: []
+  luz: natural lateral quente
+  composicao: paleta creme dominante; textura em camadas de tecido
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#B2A694'
+      fracao: 0.216
+    - hex: '#524434'
+      fracao: 0.206
+    - hex: '#B9AD9C'
+      fracao: 0.185
+    - hex: '#8B8070'
+      fracao: 0.15
+    - hex: '#A59783'
+      fracao: 0.13
+    - hex: '#C8C2B7'
+      fracao: 0.114

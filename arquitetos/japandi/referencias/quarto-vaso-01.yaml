@@ -1,0 +1,49 @@
+id: quarto-vaso-01
+arquivo: quarto-vaso-01.jpg
+origem: Unsplash, https://unsplash.com/photos/dried-grass-in-a-wooden-vase-on-a-bedside-table-NRLYAOmqd_c (baixada
+  em 2026-11-18, 1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Margo Evardson (https://unsplash.com/@stadinstudio) no Unsplash
+tipo: objeto
+ilustra:
+- vaso com capim seco no criado-mudo
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: japandi
+    peso: alto
+  - estilo: escandinavo
+    peso: medio
+  elementos:
+  - tipo: movel
+    descricao: mesa de cabeceira de madeira clara curva
+    tags:
+    - madeira_clara
+  - tipo: objeto
+    descricao: vaso de cerâmica fosca com capim seco
+    tags: []
+  - tipo: objeto
+    descricao: roupa de cama branca e verde escuro, linho
+    tags:
+    - linho
+  - tipo: movel
+    descricao: cama baixa com cabeceira de madeira clara
+    tags:
+    - madeira_clara
+  luz: quente e difusa
+  composicao: 'detalhe: um objeto natural em primeiro plano, fundo calmo'
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#4B2E09'
+      fracao: 0.268
+    - hex: '#A69E90'
+      fracao: 0.219
+    - hex: '#BFC2C5'
+      fracao: 0.166
+    - hex: '#91692C'
+      fracao: 0.146
+    - hex: '#DBE0E6'
+      fracao: 0.127
+    - hex: '#6F5D3A'
+      fracao: 0.073

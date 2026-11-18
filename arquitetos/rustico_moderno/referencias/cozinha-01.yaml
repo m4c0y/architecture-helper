@@ -1,0 +1,51 @@
+id: cozinha-01
+arquivo: cozinha-01.jpg
+origem: Unsplash, https://unsplash.com/photos/stainless-steel-cooking-pots-on-white-table-WHwu_Pzo37s (baixada em
+  2026-11-18, 1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Sosey Interiors (https://unsplash.com/@soseyinteriors) no Unsplash
+tipo: ambiente
+ilustra:
+- cozinha de projeto residencial
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: rustico_moderno
+    peso: alto
+  elementos:
+  - tipo: luminaria
+    descricao: pendentes de fibra natural (juta)
+    tags:
+    - palha
+  - tipo: movel
+    descricao: mesa-ilha de madeira maciça marcada
+    tags:
+    - madeira_media
+    - rustico
+  - tipo: revestimento
+    descricao: azulejo artesanal branco irregular
+    tags: []
+  - tipo: objeto
+    descricao: panelas de cobre penduradas em barra de latão
+    tags:
+    - latao
+  - tipo: movel
+    descricao: armários em verde acinzentado com portas de almofada
+    tags: []
+  luz: natural lateral; pendentes quentes
+  composicao: base clara; textura na madeira, fibra e azulejo
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#A39A8A'
+      fracao: 0.22
+    - hex: '#4A3A27'
+      fracao: 0.204
+    - hex: '#BAB4AB'
+      fracao: 0.186
+    - hex: '#7C6E56'
+      fracao: 0.153
+    - hex: '#937E65'
+      fracao: 0.149
+    - hex: '#D7D6D3'
+      fracao: 0.089

@@ -1,0 +1,56 @@
+id: escritorio-01
+arquivo: escritorio-01.jpg
+origem: Unsplash, https://unsplash.com/photos/black-and-brown-wooden-table-near-blue-padded-chair-EJSNrTzz6xk (baixada
+  em 2026-11-18, 1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Gian Paolo Aliatis (https://unsplash.com/@gianpaoloaliatis) no Unsplash
+tipo: ambiente
+ilustra:
+- espaço de trabalho
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: mid_century
+    peso: alto
+  elementos:
+  - tipo: movel
+    descricao: poltronas de veludo azul-petróleo com pés palito
+    tags:
+    - cor_saturada
+  - tipo: movel
+    descricao: mesa de trabalho de madeira com veio marcado
+    tags:
+    - madeira_media
+  - tipo: revestimento
+    descricao: nichos em cinza escuro com prateleiras atrás da mesa
+    tags: []
+  - tipo: luminaria
+    descricao: trilho preto com spots
+    tags:
+    - metal_preto
+  - tipo: objeto
+    descricao: mesa de centro de mármore e objetos de latão
+    tags:
+    - pedra_natural
+    - latao
+  - tipo: revestimento
+    descricao: rodatetos e molduras clássicas nas paredes
+    tags:
+    - ornamento
+  luz: natural lateral + trilho para tarefa
+  composicao: mesa centralizada no eixo, par de poltronas simétrico em primeiro plano
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#DAD7CD'
+      fracao: 0.247
+    - hex: '#313B36'
+      fracao: 0.242
+    - hex: '#E8E2D8'
+      fracao: 0.157
+    - hex: '#BFB09B'
+      fracao: 0.118
+    - hex: '#6F8B8D'
+      fracao: 0.118
+    - hex: '#F5F4EF'
+      fracao: 0.117

@@ -1,0 +1,55 @@
+id: sala-01
+arquivo: sala-01.jpg
+origem: Unsplash, https://unsplash.com/photos/gray-2-seat-sofa-near-brown-wooden-coffee-table-77JACslA8G0 (baixada
+  em 2026-11-18, 1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Katja Rooke (https://unsplash.com/@rooke) no Unsplash
+tipo: ambiente
+ilustra:
+- sala com sofá cinza e mesa de centro de madeira
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: escandinavo
+    peso: alto
+  - estilo: minimalista
+    peso: medio
+  - estilo: mid_century
+    peso: baixo
+  elementos:
+  - tipo: movel
+    descricao: sofá baixo cinza-esverdeado de linhas retas
+    tags:
+    - linho
+  - tipo: movel
+    descricao: mesa de centro oval de madeira média
+    tags:
+    - madeira_media
+  - tipo: luminaria
+    descricao: pendente cromado
+    tags:
+    - cromado
+  - tipo: luminaria
+    descricao: luminária de piso dourada
+    tags:
+    - latao
+  - tipo: objeto
+    descricao: ficus-lira em vaso branco
+    tags: []
+  luz: natural difusa, paredes brancas
+  composicao: poucas peças contra parede vazia; tapete felpudo claro
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#696052'
+      fracao: 0.202
+    - hex: '#E2E2DD'
+      fracao: 0.182
+    - hex: '#D8D6CF'
+      fracao: 0.174
+    - hex: '#CDC3B8'
+      fracao: 0.161
+    - hex: '#B5AFA3'
+      fracao: 0.141
+    - hex: '#E9E9E6'
+      fracao: 0.14

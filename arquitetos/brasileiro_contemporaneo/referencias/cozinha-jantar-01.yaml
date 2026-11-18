@@ -1,0 +1,59 @@
+id: cozinha-jantar-01
+arquivo: cozinha-jantar-01.jpg
+origem: Unsplash, https://unsplash.com/photos/modern-kitchen-and-dining-area-with-large-windows-8FIqK2J7jSc (baixada
+  em 2026-11-18, 1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Caroline Badran (https://unsplash.com/@___atmos) no Unsplash
+tipo: ambiente
+ilustra:
+- cozinha e jantar (projeto da arquiteta Júlia Manica Lazzari, RS)
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: minimalista
+    peso: alto
+  - estilo: brasileiro_contemporaneo
+    peso: medio
+  - estilo: industrial
+    peso: baixo
+  elementos:
+  - tipo: revestimento
+    descricao: laje de concreto aparente
+    tags:
+    - concreto
+  - tipo: luminaria
+    descricao: trilhos pretos com spots e perfis de LED
+    tags:
+    - metal_preto
+  - tipo: movel
+    descricao: ilha revestida de madeira média
+    tags:
+    - madeira_media
+  - tipo: movel
+    descricao: armários cinza-claro lisos do piso ao teto
+    tags: []
+  - tipo: movel
+    descricao: cadeiras de jantar de madeira com estofado verde-sálvia
+    tags:
+    - madeira_media
+  - tipo: revestimento
+    descricao: pilar de concreto branco e caixilhos pretos
+    tags:
+    - metal_preto
+  luz: natural lateral + trilhos
+  composicao: planta aberta; armazenamento fechado; madeira como único calor
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#A79481'
+      fracao: 0.209
+    - hex: '#594A3C'
+      fracao: 0.202
+    - hex: '#B7A99A'
+      fracao: 0.178
+    - hex: '#997F6A'
+      fracao: 0.162
+    - hex: '#817668'
+      fracao: 0.152
+    - hex: '#D1D0CC'
+      fracao: 0.098

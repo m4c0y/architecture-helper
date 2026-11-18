@@ -1,0 +1,59 @@
+id: cozinha-tijolo-01
+arquivo: cozinha-tijolo-01.jpg
+origem: Unsplash, https://unsplash.com/photos/brown-wooden-table-and-chairs-4RzMYZ0lx-0 (baixada em 2026-11-18,
+  1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Chastity Cortijo (https://unsplash.com/@chastityco) no Unsplash
+tipo: ambiente
+ilustra:
+- cozinha com parede de tijolo e armários de madeira
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: rustico_moderno
+    peso: alto
+  - estilo: industrial
+    peso: medio
+  elementos:
+  - tipo: revestimento
+    descricao: parede de tijolo aparente avermelhado
+    tags:
+    - tijolo
+  - tipo: movel
+    descricao: armários e ilha de madeira de demolição
+    tags:
+    - madeira_media
+    - rustico
+  - tipo: luminaria
+    descricao: pendente de braços em latão com cúpulas cônicas
+    tags:
+    - latao
+  - tipo: objeto
+    descricao: eletrodomésticos em inox
+    tags:
+    - cromado
+  - tipo: movel
+    descricao: banquetas de metal preto com assento de madeira
+    tags:
+    - metal_preto
+  - tipo: piso
+    descricao: piso de tábuas de madeira clara
+    tags:
+    - madeira_media
+  luz: natural abundante pelo vão de vidro; ambiente claro
+  composicao: tijolo como única parede de textura; madeira marcada no mobiliário
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#D7D2C4'
+      fracao: 0.225
+    - hex: '#6F4F2C'
+      fracao: 0.2
+    - hex: '#C7BCA6'
+      fracao: 0.171
+    - hex: '#97866B'
+      fracao: 0.155
+    - hex: '#C38F63'
+      fracao: 0.151
+    - hex: '#E9E9DE'
+      fracao: 0.098

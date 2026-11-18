@@ -17,6 +17,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "matplotlib" },
+    { name = "pillow" },
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "shapely" },
@@ -30,6 +31,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "matplotlib", specifier = ">=3.8" },
+    { name = "pillow", specifier = ">=10" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "shapely", specifier = ">=2.0" },

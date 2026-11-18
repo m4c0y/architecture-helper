@@ -1,0 +1,50 @@
+id: quarto-01
+arquivo: quarto-01.jpg
+origem: Unsplash, https://unsplash.com/photos/white-bed-pillow-on-brown-wooden-bed-frame-gVKmonDbotU (baixada em
+  2026-11-18, 1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Deconovo (https://unsplash.com/@deconovo) no Unsplash
+tipo: ambiente
+ilustra:
+- quarto com cama de madeira simples
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: rustico_moderno
+    peso: medio
+  - estilo: minimalista
+    peso: medio
+  elementos:
+  - tipo: movel
+    descricao: cama-plataforma de madeira de demolição
+    tags:
+    - madeira_media
+    - rustico
+  - tipo: revestimento
+    descricao: parede branca com textura de reboco
+    tags: []
+  - tipo: objeto
+    descricao: roupa de cama de linho em brancos, cinzas e areia
+    tags:
+    - linho
+  - tipo: luminaria
+    descricao: arandela de latão
+    tags:
+    - latao
+  luz: natural difusa, branca
+  composicao: uma peça forte (cama) e muito vazio
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#D3D1C5'
+      fracao: 0.222
+    - hex: '#806C4C'
+      fracao: 0.216
+    - hex: '#B8B3A4'
+      fracao: 0.165
+    - hex: '#C9C6B8'
+      fracao: 0.16
+    - hex: '#A89D88'
+      fracao: 0.135
+    - hex: '#DCDBD3'
+      fracao: 0.101

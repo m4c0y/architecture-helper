@@ -1,0 +1,51 @@
+# Persona FICTÍCIA. Valores = proposta inicial; revisar com as referências do usuário.
+id: rustico_moderno
+nome: "Casa Tramela"
+estilo: Rústico moderno
+estado: rascunho
+fonte: "proposta inicial do assistente (2026-11-18); a revisar com referências do usuário"
+resumo: >
+  Materiais com história (madeira maciça marcada, pedra, linho, couro, ferro) dentro de uma
+  base clara e de linhas simples. O rústico entra nas texturas, não na desordem: fundo calmo,
+  peças honestas, luz quente.
+
+paleta:
+  - {id: branco_cal,    nome: Branco cal,      hex: "#EFEAE0", papel: base,     uso: "paredes e teto (textura de cal ou fosco)", tags: []}
+  - {id: madeira_mel,   nome: Madeira mel,     hex: "#9B6B43", papel: base,     uso: "piso, vigas, mesa, prateleiras", tags: [madeira_media]}
+  - {id: linho_cru,     nome: Linho cru,       hex: "#D8CDBB", papel: apoio,    uso: "tecidos, estofados", tags: [linho]}
+  - {id: pedra_cinza,   nome: Pedra cinza quente, hex: "#8E877C", papel: apoio, uso: "uma parede, bancada ou piso", tags: [pedra_natural]}
+  - {id: ferro,         nome: Ferro escuro,    hex: "#2F2C29", papel: destaque, uso: "ferragens, pés, luminárias", tags: [metal_preto]}
+  - {id: terracota_queimada, nome: Terracota queimada, hex: "#A65A3A", papel: destaque, uso: "cerâmicas, uma manta", tags: [terracota]}
+  - {id: oliva,         nome: Verde oliva,     hex: "#6E6B4A", papel: destaque, uso: "plantas, um tecido", tags: []}
+
+materiais:
+  - {id: madeira_macica_marcada, nome: Madeira maciça com marcas (demolição ou escovada), onde: [moveis, marcenaria, piso], uso: "mesa, prateleiras grossas, vigas", tags: [madeira_media, rustico]}
+  - {id: pedra_bruta,  nome: Pedra natural levigada ou bruta, onde: [parede, piso, bancada], uso: "uma superfície por ambiente", tags: [pedra_natural]}
+  - {id: linho_grosso, nome: Linho grosso / algodão cru, onde: [estofados, tecidos], uso: "capas soltas, cortinas, mantas", tags: [linho]}
+  - {id: couro_natural, nome: Couro natural envelhecido, onde: [estofados, decoracao], uso: "poltrona, alças, almofadas", tags: [couro]}
+  - {id: ferro_forjado, nome: Ferro escuro fosco, onde: [moveis, luminarias], uso: "suportes, pés, ferragens aparentes", tags: [metal_preto]}
+  - {id: fibra_natural, nome: "Fibras naturais (juta, sisal, palha)", onde: [decoracao, luminarias], uso: "tapetes, cestos, cúpulas", tags: [palha]}
+
+iluminacao:
+  temperatura_k: {geral: 2700, tarefa: 3000, destaque: 2400}
+  estrategia: >
+    Luz quente e baixa em vários pontos: pendente de fibra sobre a mesa, arandelas, abajures.
+    Rasante na textura da pedra ou da madeira. Evitar luz geral fria e uniforme.
+
+luminarias:
+  - {id: pendente_fibra, tipo: pendente, descricao: "pendente de fibra natural (palha/rattan)", temperatura_k: 2700, tags: [palha]}
+  - {id: arandela_ferro, tipo: arandela, descricao: "arandela de ferro escuro com braço", temperatura_k: 2700, tags: [metal_preto]}
+  - {id: abajur_ceramica, tipo: mesa, descricao: "abajur com base de cerâmica e cúpula de linho", temperatura_k: 2700, tags: [linho]}
+  - {id: luminaria_piso_madeira, tipo: luminaria_piso, descricao: "luminária de piso com haste de madeira", temperatura_k: 2700, tags: [madeira_media]}
+
+regras:
+  fazer:
+    - "base clara e lisa; o rústico vem de poucas peças de textura forte"
+    - "uma superfície de pedra OU madeira marcada por ambiente como protagonista"
+    - "tecidos naturais, nada sintético brilhante"
+    - "misturar uma peça nova de linha simples para não virar casa de fazenda"
+  evitar:
+    - "cromado, laca brilhante, plástico"
+    - "cinzas frios e luz fria"
+    - "excesso de objetos 'temáticos' (rodas de carroça, placas antigas)"
+  evitar_tags: [cromado, laca_brilho, plastico_brilhante, cinza_frio]

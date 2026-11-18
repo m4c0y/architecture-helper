@@ -1,0 +1,60 @@
+id: quarto-carvalho-01
+arquivo: quarto-carvalho-01.jpg
+origem: Unsplash, https://unsplash.com/photos/brown-wooden-table-near-brown-couch-nIuyp2TGWrw (baixada em 2026-11-18,
+  1600 px)
+licenca: Unsplash License (https://unsplash.com/license) — uso e redistribuição livres; crédito opcional
+atribuicao: Foto de Martti Leetsar (https://unsplash.com/@leetsar) no Unsplash
+tipo: ambiente
+ilustra:
+- quarto com cama de madeira maciça em ambiente industrial
+analise:
+  por: agente (visão), 2026-11-18
+  influencias:
+  - estilo: industrial
+    peso: alto
+  - estilo: minimalista
+    peso: baixo
+  elementos:
+  - tipo: revestimento
+    descricao: paredes de tijolo e reboco cru, sem acabamento
+    tags:
+    - tijolo
+    - rustico
+  - tipo: piso
+    descricao: piso de concreto polido escuro
+    tags:
+    - concreto
+  - tipo: movel
+    descricao: cama de carvalho com cabeceira baixa sobre pés metálicos finos
+    tags:
+    - madeira_clara
+    - metal_preto
+  - tipo: revestimento
+    descricao: esquadria de vidro com montantes pretos do piso ao teto
+    tags:
+    - metal_preto
+  - tipo: objeto
+    descricao: tapete persa desbotado sob a cama
+    tags:
+    - estampa
+  - tipo: objeto
+    descricao: galho seco em vaso alto de pedra
+    tags:
+    - pedra_natural
+  luz: lateral fria da janela contra fundo escuro; clima de galpão
+  composicao: uma peça (cama) num espaço amplo e vazio; textura forte nas paredes
+  paleta:
+    script: archtools paleta --cores 6
+    cores:
+    - hex: '#291F27'
+      fracao: 0.227
+    - hex: '#485558'
+      fracao: 0.175
+    - hex: '#343136'
+      fracao: 0.171
+    - hex: '#6D807D'
+      fracao: 0.165
+    - hex: '#2C2A30'
+      fracao: 0.149
+    - hex: '#C4BCA4'
+      fracao: 0.113

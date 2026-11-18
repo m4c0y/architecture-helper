@@ -89,9 +89,16 @@ def test_validar_selecao(arqs):
 
 def test_arquitetos_do_repositorio_carregam():
     arqs = carregar_arquitetos(RAIZ / "arquitetos")
-    assert set(arqs) == {"industrial", "brasileiro_contemporaneo", "japandi", "mid_century"}
+    assert set(arqs) == {"industrial", "brasileiro_contemporaneo", "japandi", "mid_century",
+                         "minimalista", "rustico_moderno"}
+    secoes = ["## Filosofia", "## Como penso um ambiente", "## Móveis", "## Proporções e composição",
+              "## Decoração", "## Elementos arquitetônicos", "## Combina com", "## Erros comuns",
+              "## Referências que a biblioteca precisa", "## Perguntas que faço ao usuário"]
     for a in arqs.values():
-        assert (RAIZ / "arquitetos" / a.id / "persona.md").exists()
+        persona = (RAIZ / "arquitetos" / a.id / "persona.md").read_text(encoding="utf-8")
+        faltam = [s for s in secoes if s not in persona]
+        assert not faltam, f"{a.id}/persona.md sem {faltam}"
+        assert (RAIZ / "arquitetos" / a.id / "referencias").is_dir()
 
 
 def test_cli_estilo(tmp_path, capsys):

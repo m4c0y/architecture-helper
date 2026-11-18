@@ -32,11 +32,17 @@ pelas ferramentas determinísticas em `tools/` (pacote `archtools`), nunca "de c
 tools/                      pacote Python archtools (determinístico, com testes)
 arquitetos/<id>/            personas de estilo FICTÍCIAS (persona.md + arquiteto.yaml + referencias/)
 arquitetos/tags.yaml        vocabulário de tags (personas e referências)
+catalogo/produtos/          itens genéricos reutilizáveis (medidas com status)
 projetos/<nome>/
   geometria.yaml            envelope: ambientes, aberturas, pé-direito, pontos fixos (FONTE DA VERDADE)
-  layout.yaml               móveis aprovados (FONTE DA VERDADE do mobiliário; coords locais do ambiente)
+  ambientes/<id>/           um ambiente (a pasta é a aprovação; decisões 2026-11-18):
+    briefing.md             entrevista: uso, itens existentes, gostos, restrições (skill `briefing`)
+    conceito.yaml           APROVADO: como fica (estilo, referências, cores por superfície/item, luzes)
+    layout.yaml             APROVADO: o que vai onde (coords locais; itens `produto:` herdam do catálogo)
+  catalogo/produtos/        produtos escolhidos pelo usuário: medidas (status+fonte), modelo 3D, cor_real
+  layout.yaml               (antigo) layout único do projeto — vale até cada ambiente ter o seu
   criterios.yaml            folgas de circulação (decisão 0008)
-  estilo.yaml               arquitetos escolhidos (padrao / por ambiente; principal + acentos)
+  estilo.yaml               só `padrao` da casa (o estilo de cada ambiente fica no conceito.yaml)
   estudos/                  buscas exaustivas de layout (scripts reproduzíveis)
   requisitos.md             o que o usuário quer/precisa
   pendencias.md             GERADO por `archtools pendencias` — não editar à mão
@@ -45,9 +51,10 @@ projetos/<nome>/
   medicoes/                 scripts que medem as imagens de fontes/ (valores PX/PV) — reproduzíveis
   referencias/              imagens de inspiração + index.yaml
   propostas/                variações ainda não aprovadas (promovidas ficam com LEIA-ME "arquivada")
-  saidas/                   GERADO: planta.png/svg, planta-layout.*, cena.json, 3d/ (renders + modelo.blend)
+  saidas/                   GERADO: planta.png/svg, planta-layout.*, cena.json, 3d/ (renders + modelo.blend);
+                            cada pasta tem manifest.json (de quais entradas veio) — `archtools status` confere
 blender/construir_cena.py   lê cena.json e monta/renderiza no Blender (não calcula geometria)
-.claude/skills/             procedimentos: ingerir-planta, validar-projeto, registrar-decisao, arquiteto, referencia
+.claude/skills/             procedimentos: ingerir-planta, validar-projeto, registrar-decisao, briefing, arquiteto, referencia
 ```
 
 ## Comandos (rodar a partir da raiz do repositório)
@@ -64,17 +71,22 @@ uv run --project tools archtools estilo projetos/apartamento [--estilo <proposta
     projetos/apartamento/saidas/cena.json projetos/apartamento/saidas/3d [--cameras dorm2-se] [--res 1280x720] [--motor eevee|cycles] [--periodo dia|noite|ambos]
 uv run --project tools archtools referencias arquitetos                       # valida bibliotecas de referência
 uv run --project tools archtools paleta <imagem> [--arquiteto <id>] [--gravar]  # paleta por script (median cut)
+uv run --project tools archtools status projetos/apartamento       # fases, aprovações, saídas desatualizadas
+uv run --project tools archtools aprovacao projetos/apartamento --arquivos layout.yaml   # cabeçalho de decisão com hash
 uv run --project tools pytest tools/tests -q
 ```
 
-Layouts novos: proposta em `propostas/<nome>/layout.yaml` → `archtools layout` (0 erros) → aprovação do
-usuário → copiar para `layout.yaml` + decisão. Móveis são caixas simples (mesa = tampo + pernas).
+Fluxo de um ambiente: `briefing` → propostas em `propostas/<ambiente>-<nome>/` (`layout.yaml` com
+`ambiente: <id>` + `conceito.yaml` + `LEIA-ME.md`) → `archtools layout` (0 erros) e `archtools cena`
+→ aprovação do usuário → copiar para `ambientes/<id>/` + decisão com `archtools aprovacao`.
+Móveis são caixas simples (mesa = tampo + pernas) ou modelos paramétricos (`modelo`).
 
 Estilo: skill `arquiteto`. Cada ambiente (ou a casa toda) tem um arquiteto principal + acentos;
 cores/materiais/luz vêm de `archtools estilo` (nunca de cabeça). Comparar = uma proposta por combinação.
-Imagens com estilo: `acabamentos.yaml` na proposta (cor por parede/teto/móvel + luzes das luminárias)
-→ `archtools cena --layout <proposta>/layout.yaml` valida contra o estilo resolvido e exporta cores/luzes
-→ Blender `--periodo ambos` (dia: sol; noite: só as luminárias). Não recolorir produtos de cor conhecida.
+Imagens com estilo: `conceito.yaml` (cor por parede/teto/item + luzes das luminárias)
+→ `archtools cena` valida contra o estilo resolvido e exporta cores/luzes; o Blender não escolhe cor
+nenhuma (o que não tiver aparência definida sai em cinza de marcação e vai para o relatório)
+→ Blender `--periodo ambos` (dia: sol; noite: só as luminárias). Não recolorir produtos com `cor_real`.
 
 ## Convenções da geometria
 
@@ -97,10 +109,15 @@ Imagens com estilo: `acabamentos.yaml` na proposta (cor por parede/teto/móvel +
   `& "C:\Program Files\Blender Foundation\Blender 5.3\blender.exe" --background --python <script> -- <args>`
   Python embutido 3.13 (sem shapely) → toda geometria é calculada no `archtools`; o Blender só monta a cena.
 
-## Fases
+## Fases (por ambiente; decididas em 2026-11-18)
 
-1. Esquema + validação + planta 2D + histórico. (concluída)
-2. **(atual)** Layout de móveis, regras de circulação, modelo 3D no Blender (headless, gerado do YAML).
-   Feito: escritório (dorm2) aprovado e renderizado. Falta: demais ambientes.
-3. Imagens realistas (render do Blender como base + serviço de IA na nuvem).
-4. Auditoria de consistência entre saídas e fonte da verdade.
+- **P1 Levantamento** — geometria do apartamento (concluída; reabre quando chega medição nova).
+- **P2 Projeto do ambiente** — 2a briefing · 2b conceito · 2c layout (+ blockout no Blender).
+- **P3 Preview e refinamento** — design completo renderizado; volta a P2 a cada mudança.
+- **P4 Detalhamento** — mais fidelidade de modelos e materiais, sem mudar decisões.
+- **P5 Render final** — câmeras definitivas, Cycles; imagem de IA só como ilustração rotulada.
+- **P6 Entrega** — lista de compras, quantidades, pontos elétricos, marcenaria.
+
+A fase de cada ambiente é **calculada** (`archtools status`), não escrita à mão. A auditoria de
+consistência é contínua: `status` aponta saídas desatualizadas e arquivos aprovados alterados sem
+decisão. Roteiro de implementação: `docs/proposta-arquitetura-v2.md` (§7, §8).

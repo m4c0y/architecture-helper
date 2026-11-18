@@ -10,6 +10,7 @@ description: Roda as validações determinísticas do archtools sobre um projeto
    uv run --project tools archtools validar projetos/<projeto>
    uv run --project tools archtools areas projetos/<projeto>
    uv run --project tools archtools pendencias projetos/<projeto>
+   uv run --project tools archtools status projetos/<projeto>
    ```
    Se houver erro de esquema (exit 2), mostre a mensagem e pare: o YAML precisa ser
    corrigido antes de qualquer outra análise.
@@ -22,6 +23,9 @@ description: Roda as validações determinísticas do archtools sobre um projeto
    - **Não verificáveis** — regras que não puderam rodar por falta de dados; aponte
      para `pendencias.md`.
    - **Quadro de áreas** — copie a saída do comando; não recalcule nada à mão.
+   - **Status** — arquivos aprovados ALTERADOS sem decisão (pergunte ao usuário se registra uma
+     decisão ou desfaz a edição), saídas DESATUALIZADAS (regerar antes de usar) e SEM MANIFESTO
+     (geradas antes dos manifestos ou sobras — regerar; sobras podem ser apagadas, são saídas).
 
 3. Se um erro só existe por causa de um valor estimado, sugira confirmar esse valor
    com trena como próximo passo.

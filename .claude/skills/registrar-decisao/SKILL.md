@@ -8,7 +8,19 @@ description: Registra uma decisão de projeto (layout, material, medida adotada,
 1. Descobrir o próximo número: maior `NNNN` em `projetos/<projeto>/decisoes/` + 1
    (começa em `0001`).
 
-2. Criar `decisoes/NNNN-titulo-curto-com-hifens.md`:
+2. Criar `decisoes/NNNN-titulo-curto-com-hifens.md`.
+
+   **Se a decisão aprova arquivos** (layout, estilo/conceito, geometria promovida, critérios),
+   o arquivo começa com o cabeçalho gerado pela ferramenta — nunca escreva hashes à mão:
+   ```bash
+   uv run --project tools archtools aprovacao projetos/<projeto> --arquivos layout.yaml [--base geometria.yaml]
+   ```
+   Cole a saída (bloco `---` … `---`) no topo e o texto abaixo. Gere o cabeçalho **depois** de
+   copiar o arquivo aprovado para o lugar definitivo, para o hash ser o do conteúdo aprovado.
+   Ao substituir uma decisão com cabeçalho, mude nela `estado: substituida` e
+   `substituida_por: "NNNN"` (é a única edição permitida numa decisão aceita).
+
+   Corpo da decisão:
 
    ```markdown
    # NNNN — Título
@@ -40,3 +52,6 @@ description: Registra uma decisão de projeto (layout, material, medida adotada,
    antiga como "substituída por NNNN".
 
 5. Se a decisão afeta um requisito, atualize a linha correspondente em `requisitos.md`.
+
+6. Rode `uv run --project tools archtools status projetos/<projeto>`: o arquivo aprovado deve
+   aparecer como `OK` com o número da decisão.

@@ -20,10 +20,16 @@ persona (`arquiteto.yaml` + seção "Combina com" de `persona.md`) e proponha 2�
 explicando o porquê com essas evidências. Depois, uma proposta por candidato.
 
 ## 2. Montar a(s) proposta(s)
+Pré-requisito: o ambiente tem `ambientes/<id>/briefing.md` (skill `briefing`); se não tiver, faça antes.
+
 Para cada combinação, criar `projetos/<p>/propostas/<ambiente>-<principal>[-<acento>]/`:
-- `estilo.yaml` — a seleção (`padrao` e/ou `ambientes`), mesmo formato de `projetos/<p>/estilo.yaml`;
-- `layout.yaml` — só se a proposta mexer em móveis/luminárias (cópia do aprovado + mudanças);
+- `conceito.yaml` — estilo (`principal`/`acentos`), referências aprovadas, cores por superfície e por
+  item, luzes (formato na docstring de `tools/src/archtools/conceito.py`);
+- `layout.yaml` — com `ambiente: <id>` no topo; cópia do aprovado + mudanças, ou novo. Itens de
+  produtos reais usam `produto: <id do catálogo>` (medidas vêm de lá);
 - `LEIA-ME.md` — a proposta em texto (ver passo 4).
+Validar com `archtools layout ... --layout <proposta>/layout.yaml` e `archtools cena ... --layout
+<proposta>/layout.yaml` (esta valida o conceito contra o estilo resolvido).
 
 ## 3. Resolver o estilo com a ferramenta (nunca de cabeça)
 ```bash
@@ -57,9 +63,12 @@ Ler `arquitetos/<principal>/persona.md` (e as dos acentos) e as referências do 
   o principal evita.
 
 ## 6. Aprovação
-Usuário aprova uma proposta → copiar o `estilo.yaml` (e `layout.yaml`, se houver) para
-`projetos/<p>/` e registrar com a skill `registrar-decisao`. Combinações não aprovadas ficam
-em `propostas/` com LEIA-ME "arquivada" (ou são excluídas, se o usuário pedir).
+Usuário aprova uma proposta → copiar `conceito.yaml` e/ou `layout.yaml` para
+`projetos/<p>/ambientes/<id>/` (sem o `ambiente:` do topo do layout, que passa a vir da pasta) e
+registrar com a skill `registrar-decisao` (cabeçalho com `archtools aprovacao`). Se o ambiente
+ainda tinha itens no `layout.yaml` antigo do projeto, removê-los de lá na mesma decisão.
+Combinações não aprovadas ficam em `propostas/` com LEIA-ME "arquivada" (ou são excluídas, se o
+usuário pedir).
 
 ## 7. Editar um arquiteto
 Mudanças em `arquitetos/<id>/arquiteto.yaml` (cores, regras, tags) só com pedido do usuário.

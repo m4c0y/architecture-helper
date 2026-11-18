@@ -72,8 +72,9 @@ class Movel(_Base):
     braco_largura: Medida | None = None
     braco_altura: Medida | None = None
     bracos: list[Literal["esquerdo", "direito"]] = Field(default_factory=list)  # de quem está sentado
-    produto: str | None = None
+    produto: str | None = None  # id no catálogo (herda medidas/modelo/cor); texto livre em layouts antigos
     modelo: str | None = None  # modelo 3D paramétrico (archtools.modelos.MODELOS); só aparência
+    cor_real: str | None = None  # hex da cor conhecida do produto (normalmente herdada do catálogo)
     associado: str | None = None  # id do móvel cuja folga este pode ocupar (ex.: cadeira -> mesa)
     notas: str | None = None
 
@@ -81,12 +82,61 @@ class Movel(_Base):
 class Layout(_Base):
     nome: str
     descricao: str | None = None
+    ambiente: str | None = None  # layout de um ambiente só: vale para itens sem `ambiente`
     moveis: list[Movel] = Field(default_factory=list)
 
 
-def carregar_layout(caminho: Path) -> Layout:
+def carregar_layout(caminho: Path, catalogo: dict | None = None, ambiente_padrao: str | None = None) -> Layout:
+    """Lê um layout.yaml. Itens com `produto` do catálogo herdam o que não informarem; num
+    layout de ambiente (`ambientes/<id>/layout.yaml`) o `ambiente` dos itens é o da pasta."""
+    from .catalogo import herdar
     with Path(caminho).open(encoding="utf-8") as f:
-        return Layout.model_validate(yaml.safe_load(f) or {})
+        dados = yaml.safe_load(f) or {}
+    ambiente_padrao = ambiente_padrao or dados.get("ambiente")
+    itens = []
+    for item in dados.get("moveis") or []:
+        item = herdar(item, catalogo or {})
+        if ambiente_padrao is not None:
+            if item.setdefault("ambiente", ambiente_padrao) != ambiente_padrao:
+                raise ValueError(f"{caminho}: item '{item.get('id')}' está em '{item['ambiente']}', "
+                                 f"mas o arquivo é do ambiente '{ambiente_padrao}'")
+        pid = item.get("produto")
+        if pid and catalogo is not None and pid not in catalogo and "largura" not in item:
+            raise ValueError(f"{caminho}: item '{item.get('id')}' usa produto '{pid}', que não está no catálogo")
+        itens.append(item)
+    dados["moveis"] = itens
+    return Layout.model_validate(dados)
+
+
+def layouts_do_projeto(pasta: Path) -> list[Path]:
+    """Layouts aprovados: `ambientes/*/layout.yaml` + o `layout.yaml` único antigo, se existir."""
+    pasta = Path(pasta)
+    arqs = sorted(pasta.glob("ambientes/*/layout.yaml"))
+    if (pasta / "layout.yaml").exists():
+        arqs.append(pasta / "layout.yaml")
+    return arqs
+
+
+def ambiente_do_arquivo(arquivo: Path) -> str | None:
+    """`.../ambientes/<id>/layout.yaml` -> '<id>'; outros caminhos -> None."""
+    p = Path(arquivo)
+    return p.parent.name if p.parent.parent.name == "ambientes" else None
+
+
+def carregar_layout_projeto(pasta: Path, catalogo: dict | None = None) -> Layout | None:
+    """Todos os layouts aprovados do projeto num só (para planta geral e cena)."""
+    arqs = layouts_do_projeto(pasta)
+    if not arqs:
+        return None
+    moveis, ids = [], set()
+    for a in arqs:
+        lay = carregar_layout(a, catalogo, ambiente_do_arquivo(a))
+        for m in lay.moveis:
+            if m.id in ids:
+                raise ValueError(f"{a}: id de item repetido entre layouts: '{m.id}'")
+            ids.add(m.id)
+            moveis.append(m)
+    return Layout(nome=Path(pasta).name, descricao="layouts aprovados combinados", moveis=moveis)
 
 
 def carregar_criterios(projeto_dir: Path) -> Criterios:

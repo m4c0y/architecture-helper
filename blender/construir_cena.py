@@ -12,8 +12,11 @@ Se o cena.json tiver `luzes` (proposta de estilo): "dia" = sol + céu, luminári
 """
 
 import argparse
+import datetime
+import hashlib
 import json
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -23,26 +26,12 @@ from mathutils import Vector
 
 MM = 0.001
 
-CORES = {  # cores neutras (acabamentos reais desconhecidos)
-    "parede": (0.92, 0.91, 0.89, 1), "teto": (0.95, 0.95, 0.95, 1),
-    "piso_interno": (0.62, 0.50, 0.38, 1), "piso_varanda": (0.70, 0.70, 0.68, 1),
-    "piso_externo": (0.35, 0.55, 0.30, 1), "piso_tecnico": (0.6, 0.6, 0.6, 1),
-    "cercamento": (0.20, 0.40, 0.22, 1), "vidro": (0.8, 0.9, 1.0, 1),
-    "sofa": (0.18, 0.27, 0.50, 1), "mesa": (0.55, 0.40, 0.26, 1), "estante": (0.15, 0.15, 0.15, 1),
-    "aparador": (0.45, 0.30, 0.18, 1), "prateleira": (0.35, 0.35, 0.35, 1),
-    "equipamento": (0.08, 0.08, 0.08, 1), "outro": (0.7, 0.7, 0.7, 1),
-    # materiais dos modelos de produto (archtools.modelos)
-    "metal_preto": (0.02, 0.02, 0.02, 1), "madeira_clara": (0.72, 0.56, 0.40, 1),
-    "preto_brilho": (0.01, 0.01, 0.01, 1), "cromado": (0.85, 0.85, 0.87, 1),
-    "nogueira": (0.30, 0.18, 0.11, 1), "madeira_pes": (0.76, 0.58, 0.40, 1), "discos": (0.55, 0.47, 0.36, 1),
-    "vaso": (0.55, 0.53, 0.50, 1), "caule": (0.30, 0.22, 0.12, 1), "folhagem": (0.13, 0.35, 0.12, 1),
-    "tela": (0.03, 0.04, 0.06, 1), "tecido_preto": (0.04, 0.04, 0.045, 1),
-}
-ACABAMENTO = {  # (metálico, rugosidade)
-    "metal_preto": (0.8, 0.45), "cromado": (1.0, 0.12), "preto_brilho": (0.0, 0.15),
-    "nogueira": (0.0, 0.5), "madeira_clara": (0.0, 0.55), "madeira_pes": (0.0, 0.5),
-    "tela": (0.0, 0.08), "tecido_preto": (0.0, 0.85), "folhagem": (0.0, 0.7),
-}
+# NENHUMA cor de projeto aqui: toda superfície/peça chega do cena.json com `acabamento`
+# (resolvido pelo archtools: produto, estilo, natural ou neutro). Sem acabamento = erro de
+# exportação; é desenhado no cinza de marcação abaixo e listado em relatorio.json.
+MARCACAO = {"cor_id": "sem-acabamento", "hex": "#959595", "rgba": [0.3, 0.3, 0.3, 1.0],
+            "metal": 0.0, "rugosidade": 0.7, "origem": "neutro"}
+SEM_ACABAMENTO = []
 
 
 def args():
@@ -59,31 +48,21 @@ def args():
     return p.parse_args(argv)
 
 
-def material(nome, cor, vidro=False):
-    m = bpy.data.materials.get(nome) or bpy.data.materials.new(nome)
-    m.use_nodes = True
-    bsdf = m.node_tree.nodes.get("Principled BSDF")
-    bsdf.inputs["Base Color"].default_value = cor
-    metal, rug = ACABAMENTO.get(nome, (0.0, 0.05 if vidro else 0.6))
-    bsdf.inputs["Roughness"].default_value = rug
-    bsdf.inputs["Metallic"].default_value = metal
-    if vidro:
-        bsdf.inputs["Alpha"].default_value = 0.15
-        for attr, val in (("surface_render_method", "BLENDED"), ("blend_method", "BLEND")):
-            if hasattr(m, attr):
-                try:
-                    setattr(m, attr, val)
-                except TypeError:
-                    pass
-    return m
-
-
 _ACAB = {}
 
 
+def acabamento(d, nome):
+    """Acabamento de um elemento do cena.json (chave `acabamento` ou campos no próprio item)."""
+    a = d.get("acabamento") or (d if "hex" in d else None)
+    if a is None:
+        SEM_ACABAMENTO.append(nome)
+        return MARCACAO
+    return a
+
+
 def material_acabamento(a, emissor_rgb=None):
-    """Material a partir de um `acabamento` do cena.json (cor linear + metálico + rugosidade)."""
-    chave = (a["hex"], a["metal"], a["rugosidade"], tuple(emissor_rgb or ()))
+    """Material a partir de um `acabamento` do cena.json (cor linear + metálico + rugosidade [+ alfa])."""
+    chave = (a["hex"], a["metal"], a["rugosidade"], a.get("alfa"), tuple(emissor_rgb or ()))
     if chave in _ACAB:
         return _ACAB[chave]
     m = bpy.data.materials.new(f"{a['cor_id']}-{a['hex']}" + ("-luz" if emissor_rgb else ""))
@@ -92,6 +71,14 @@ def material_acabamento(a, emissor_rgb=None):
     bsdf.inputs["Base Color"].default_value = a["rgba"]
     bsdf.inputs["Metallic"].default_value = a["metal"]
     bsdf.inputs["Roughness"].default_value = a["rugosidade"]
+    if a.get("alfa") is not None:
+        bsdf.inputs["Alpha"].default_value = a["alfa"]
+        for attr, val in (("surface_render_method", "BLENDED"), ("blend_method", "BLEND")):
+            if hasattr(m, attr):
+                try:
+                    setattr(m, attr, val)
+                except TypeError:
+                    pass
     if emissor_rgb:
         bsdf.inputs["Emission Color"].default_value = (*emissor_rgb, 1)
         bsdf.inputs["Emission Strength"].default_value = 0.0  # ligado no período "noite"
@@ -208,6 +195,28 @@ def motor(cena_bpy, nome, amostras):
     raise RuntimeError("Eevee indisponível")
 
 
+def _hash(p):
+    """Mesmo hash do archtools.manifesto (sha256, 16 hex; CRLF->LF em texto)."""
+    dados = Path(p).read_bytes()
+    if Path(p).suffix.lower() in {".yaml", ".yml", ".md", ".json", ".py", ".txt", ".svg", ".csv"}:
+        dados = dados.replace(b"\r\n", b"\n")
+    return hashlib.sha256(dados).hexdigest()[:16]
+
+
+def manifesto(saida, gerados, cena, args_txt):
+    """Atualiza saida/manifest.json (mesmo formato do archtools): cada arquivo gerado <- cena.json."""
+    arq = saida / "manifest.json"
+    man = json.loads(arq.read_text(encoding="utf-8")) if arq.exists() else {"versao": 1, "saidas": {}}
+    cena_rel = Path(os.path.relpath(Path(cena).resolve(), Path.cwd())).as_posix()
+    agora = datetime.datetime.now().isoformat(timespec="seconds")
+    for g in gerados:
+        man["saidas"][Path(g).resolve().relative_to(saida).as_posix()] = {
+            "entradas": {cena_rel: _hash(cena)}, "comando": f"blender/construir_cena.py -- {args_txt}",
+            "gerado_em": agora, "archtools": "blender " + bpy.app.version_string}
+    man["saidas"] = dict(sorted(man["saidas"].items()))
+    arq.write_text(json.dumps(man, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def main():
     a = args()
     dados = json.loads(Path(a.cena).read_text(encoding="utf-8"))
@@ -216,17 +225,19 @@ def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     sc = bpy.context.scene
 
-    mats = {k: material(k, v, vidro=(k == "vidro")) for k, v in CORES.items()}
     c_par, c_cor, c_pis, c_tet = colecao("paredes"), colecao("recortes"), colecao("pisos"), colecao("tetos")
     c_mov, c_cam, c_ext = colecao("moveis"), colecao("cameras"), colecao("externo")
 
-    paredes = [prisma(p["id"], p, c_par, mats["parede"]) for p in dados["paredes"]]
+    def mat(d, nome):
+        return material_acabamento(acabamento(d, nome))
+
+    paredes = [prisma(p["id"], p, c_par, mat(p, p["id"])) for p in dados["paredes"]]
     for rv in dados.get("revestimentos", []):
         ob = (prisma if "aneis" in rv else superficie)(rv["id"], rv, c_par, material_acabamento(rv))
         if rv.get("recortar"):
             paredes.append(ob)
     for r in dados["recortes"]:
-        prisma(f"recorte-{r['id']}", r, c_cor, mats["outro"])
+        prisma(f"recorte-{r['id']}", r, c_cor, material_acabamento(MARCACAO))  # oculto: só subtrai
     for par in paredes:
         mod = par.modifiers.new("aberturas", "BOOLEAN")
         mod.operation = "DIFFERENCE"
@@ -239,13 +250,13 @@ def main():
     c_cor.hide_viewport = True
 
     for v in dados["vidros"]:
-        prisma(v["id"], v, c_par, mats["vidro"])
+        prisma(v["id"], v, c_par, mat(v, v["id"]))
     for p in dados["pisos"]:
-        superficie(p["id"], p, c_pis, mats.get(f"piso_{p['tipo']}", mats["outro"]))
+        superficie(p["id"], p, c_pis, mat(p, p["id"]))
     for t in dados["tetos"]:
-        (prisma if "aneis" in t else superficie)(t["id"], t, c_tet, mats["teto"])
+        (prisma if "aneis" in t else superficie)(t["id"], t, c_tet, mat(t, t["id"]))
     for c in dados["cercamentos"]:
-        prisma(c["id"], c, c_ext, mats["cercamento"])
+        prisma(c["id"], c, c_ext, mat(c, c["id"]))
     luzes_dados = dados.get("luzes", [])
     emissores = {lz["movel"]: lz["rgb"] for lz in luzes_dados if lz.get("emissor")}
     com_luz = {lz["movel"] for lz in luzes_dados}
@@ -253,12 +264,9 @@ def main():
         partes = m.get("partes") or [m]
         tem_cupula = any(pt.get("material") == "cupula" for pt in partes)
         for i, pt in enumerate(partes):
-            if "acabamento" in pt:
-                brilha = not tem_cupula or pt.get("material") == "cupula"
-                mat = material_acabamento(pt["acabamento"], emissores.get(m["id"]) if brilha else None)
-            else:
-                mat = mats.get(pt.get("material") or m["categoria"], mats["outro"])
-            ob = caixa(f"{m['id']}-{i}", pt["bbox"], pt["z0"], pt["z1"], c_mov, mat, pt.get("forma", "caixa"))
+            brilha = not tem_cupula or pt.get("material") == "cupula"
+            mt = material_acabamento(acabamento(pt, f"{m['id']}-{i}"), emissores.get(m["id"]) if brilha else None)
+            ob = caixa(f"{m['id']}-{i}", pt["bbox"], pt["z0"], pt["z1"], c_mov, mt, pt.get("forma", "caixa"))
             if m["id"] in com_luz and hasattr(ob, "visible_shadow"):
                 ob.visible_shadow = False  # a cúpula não bloqueia a própria lâmpada
 
@@ -324,6 +332,7 @@ def main():
     periodos = ["dia", "noite"] if a.periodo == "ambos" else [a.periodo]
     sufixo = bool(luzes_obs) or a.periodo != "dia"
     cams = [c for c in dados["cameras"] if a.cameras is None or c["id"] in a.cameras]
+    gerados = []
     for per in periodos:
         periodo(per)
         for c in cams:
@@ -337,10 +346,22 @@ def main():
                     bpy.data.objects[rv["id"]].hide_render = bool(c.get("sem_teto"))
             sc.render.filepath = str(saida / (f"{c['id']}-{per}.png" if sufixo else f"{c['id']}.png"))
             bpy.ops.render.render(write_still=True)
+            gerados.append(Path(sc.render.filepath))
             print(f"RENDER_OK {c['id']} {per} -> {sc.render.filepath} ({eng})")
     c_tet.hide_render = False
     bpy.ops.wm.save_as_mainfile(filepath=str(saida / "modelo.blend"))
     print(f"BLEND_OK {saida / 'modelo.blend'}")
+    gerados.append(saida / "modelo.blend")
+    relatorio = {"cena": str(a.cena), "motor": eng, "suposicoes": dados.get("suposicoes", []),
+                 "sem_acabamento_no_json": SEM_ACABAMENTO,
+                 "neutros": sorted({m["id"] for m in dados["moveis"]
+                                    for pt in (m.get("partes") or [m])
+                                    if (pt.get("acabamento") or MARCACAO).get("origem") == "neutro"})}
+    (saida / "relatorio.json").write_text(json.dumps(relatorio, ensure_ascii=False, indent=1), encoding="utf-8")
+    gerados.append(saida / "relatorio.json")
+    manifesto(saida, gerados, Path(a.cena), " ".join(sys.argv[sys.argv.index("--") + 1:]) if "--" in sys.argv else "")
+    if SEM_ACABAMENTO:
+        print(f"AVISO: {len(SEM_ACABAMENTO)} elemento(s) sem acabamento no cena.json (cinza de marcação)")
 
 
 main()

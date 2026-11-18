@@ -25,6 +25,7 @@ from shapely.ops import unary_union
 
 from .geometria import de_medida, paredes, pe_direito, poligono_global, segmento_abertura
 from .layout import Layout, _global, pegada_local
+from .materiais import de_hex, de_peca, superficie
 from .schema import Geometria
 
 ESPESSURA_EXTERNA = 150  # mm — estimada no desenho (0,14–0,16 m); não medida
@@ -59,7 +60,7 @@ def _superficie(pol: Polygon, z: float, **extra) -> dict:
 def gerar_cena(geo: Geometria, layout: Layout | None = None) -> dict:
     pd_padrao = de_medida(geo.pe_direito_padrao).valor or 2800
     suposicoes = [f"espessura das paredes externas = {ESPESSURA_EXTERNA} mm (estimada no desenho)",
-                  "acabamentos de piso/parede desconhecidos: cores neutras por tipo de ambiente",
+                  "acabamentos de piso/parede/teto desconhecidos: tons neutros de cinza (origem 'neutro', não é proposta)",
                   "orientação solar desconhecida: sol genérico entrando pelas janelas do fundo"]
     if de_medida(geo.pe_direito_padrao).valor is None:
         suposicoes.append("pé-direito desconhecido: 2800 mm provisório")
@@ -75,7 +76,7 @@ def gerar_cena(geo: Geometria, layout: Layout | None = None) -> dict:
                   "cercamentos": [], "moveis": [], "cameras": []}
 
     for i, p in enumerate(_poligonos(massa)):
-        cena["paredes"].append(_prisma(p, 0, pd_padrao, id=f"parede-{i}"))
+        cena["paredes"].append(_prisma(p, 0, pd_padrao, id=f"parede-{i}", acabamento=superficie("parede")))
 
     # aberturas: recorte atravessando a parede + vidro nas janelas
     ambientes = {a.id: a for a in geo.ambientes}
@@ -105,28 +106,32 @@ def gerar_cena(geo: Geometria, layout: Layout | None = None) -> dict:
             off = ESPESSURA_EXTERNA * 0.4
             vidro = LineString([(a[0] + nx * off, a[1] + ny * off), (b[0] + nx * off, b[1] + ny * off)]).buffer(
                 6, cap_style="flat")
-            cena["vidros"].append(_prisma(vidro, z0, z0 + alt, id=f"vidro-{ab.id}"))
+            cena["vidros"].append(_prisma(vidro, z0, z0 + alt, id=f"vidro-{ab.id}", acabamento=superficie("vidro")))
 
     # pisos (todos os ambientes) e tetos (internos + varanda coberta; forros com pé-direito próprio)
     for amb in geo.ambientes:
         pol, _ = poligono_global(amb)
         if pol is None:
             continue
-        cena["pisos"].append(_superficie(pol, 0, id=f"piso-{amb.id}", tipo=amb.tipo, ambiente=amb.id))
+        cena["pisos"].append(_superficie(pol, 0, id=f"piso-{amb.id}", tipo=amb.tipo, ambiente=amb.id,
+                                          acabamento=superficie("piso_externo" if amb.tipo == "externo" else "piso")))
         pd_amb = pe_direito(amb, geo).valor or pd_padrao
         if amb.tipo in ("interno", "varanda") and pd_amb < pd_padrao:
-            cena["tetos"].append(_superficie(pol, pd_amb, id=f"forro-{amb.id}", ambiente=amb.id))
+            cena["tetos"].append(_superficie(pol, pd_amb, id=f"forro-{amb.id}", ambiente=amb.id,
+                                              acabamento=superficie("teto")))
         if amb.tipo == "varanda":
-            cena["tetos"].append(_prisma(pol, pd_padrao, pd_padrao + ESPESSURA_LAJE, id=f"laje-{amb.id}"))
+            cena["tetos"].append(_prisma(pol, pd_padrao, pd_padrao + ESPESSURA_LAJE, id=f"laje-{amb.id}",
+                                          acabamento=superficie("teto")))
     for i, p in enumerate(_poligonos(envoltoria)):
-        cena["tetos"].append(_prisma(p, pd_padrao, pd_padrao + ESPESSURA_LAJE, id=f"laje-{i}"))
+        cena["tetos"].append(_prisma(p, pd_padrao, pd_padrao + ESPESSURA_LAJE, id=f"laje-{i}",
+                                      acabamento=superficie("teto")))
 
     for c in geo.cercamentos:
         pts = [(p.x, p.y) for p in c.pontos if p.x is not None]
         alt = de_medida(c.altura).valor
         if len(pts) >= 2 and alt:
             for i, p in enumerate(_poligonos(LineString(pts).buffer(20, cap_style="flat", join_style="mitre"))):
-                cena["cercamentos"].append(_prisma(p, 0, alt, id=f"{c.id}-{i}"))
+                cena["cercamentos"].append(_prisma(p, 0, alt, id=f"{c.id}-{i}", acabamento=superficie("cercamento")))
 
     if layout is not None:
         for m in layout.moveis:
@@ -136,10 +141,15 @@ def gerar_cena(geo: Geometria, layout: Layout | None = None) -> dict:
                 continue
             z0 = m.elevacao.valor or 0
             z1 = z0 + (m.altura.valor or 0)
+            partes = _partes(m, p.bounds, z0, z1)
+            for pt in partes:  # cor conhecida do produto; senão, neutro (pendência no relatório)
+                pt["acabamento"] = de_peca(pt.get("material"))
+                if pt["acabamento"]["origem"] == "neutro" and m.cor_real:
+                    pt["acabamento"] = de_hex(m.cor_real, f"{m.produto or m.id}-real")
             cena["moveis"].append({"id": m.id, "nome": m.nome, "categoria": m.categoria, "ambiente": m.ambiente,
                                    "bbox": list(p.bounds), "z0": z0, "z1": z1, "frente": m.frente,
-                                   "modelo": m.modelo,
-                                   "partes": _partes(m, p.bounds, z0, z1)})
+                                   "modelo": m.modelo, "produto": m.produto, "cor_real": m.cor_real,
+                                   "partes": partes})
     return cena
 
 

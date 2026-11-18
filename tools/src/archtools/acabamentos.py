@@ -34,6 +34,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from .estilo import Cor, EstiloResolvido, Luminaria
 from .geometria import paredes as paredes_amb
 from .geometria import pe_direito, poligono_global
+from .materiais import PRODUTO
 from .schema import Geometria
 
 ESPESSURA_PINTURA = 3  # mm — painel fino rente à face interna da parede (só visual)
@@ -97,7 +98,8 @@ def acabamento_de(cor: Cor, superficie: str = "objeto") -> dict:
     tags = set(cor.tags)
     metal, rug = (1.0, 0.35) if "latao" in tags else (0.8, 0.45) if "metal_preto" in tags else \
         (0.0, 0.45) if "couro" in tags else (0.0, 0.85 if superficie == "parede" else 0.6)
-    return {"cor_id": cor.id, "hex": cor.hex, "rgba": hex_para_linear(cor.hex), "metal": metal, "rugosidade": rug}
+    return {"cor_id": cor.id, "hex": cor.hex, "rgba": hex_para_linear(cor.hex), "metal": metal, "rugosidade": rug,
+            "origem": "estilo"}
 
 
 # ------------------------------------------------------------------ validação + exportação
@@ -220,7 +222,8 @@ def aplicar_acabamentos(cena: dict, acab: Acabamentos, r: EstiloResolvido, geo: 
         if lum.tipo == "pendente" and m["z1"] < pd:  # fio até a laje
             cx, cy = (m["bbox"][0] + m["bbox"][2]) / 2, (m["bbox"][1] + m["bbox"][3]) / 2
             m["partes"].append({"bbox": [cx - 4, cy - 4, cx + 4, cy + 4], "z0": m["z1"], "z1": pd,
-                                "forma": "cilindro", "material": "metal_preto"})
+                                "forma": "cilindro", "material": "metal_preto",
+                                "acabamento": dict(PRODUTO["metal_preto"], origem="estilo")})
 
     cena["estilo"] = {"ambiente": acab.ambiente, "fonte": acab.fonte,
                       "principal": r.escolha.principal, "acentos": r.escolha.acentos}

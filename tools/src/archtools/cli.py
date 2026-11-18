@@ -12,6 +12,13 @@ from .relatorios import pendencias, quadro_areas
 from .schema import carregar_geometria
 from .validacao import resumo, validar
 
+COMANDO = "archtools"  # linha de comando atual (vai para os manifestos)
+
+
+def _manifesto(pasta: Path, saidas, entradas) -> None:
+    from .manifesto import registrar
+    registrar(pasta, list(saidas), [e for e in entradas if e is not None], COMANDO)
+
 
 def _carregar(pasta: Path):
     try:
@@ -42,8 +49,10 @@ def cmd_areas(pasta: Path) -> int:
 
 def cmd_planta(pasta: Path) -> int:
     from .planta2d import desenhar  # matplotlib só quando necessário
-    for p in desenhar(_carregar(pasta), pasta / "saidas"):
+    gerados = desenhar(_carregar(pasta), pasta / "saidas")
+    for p in gerados:
         print(f"gerado: {p}")
+    _manifesto(pasta / "saidas", gerados, [pasta / "geometria.yaml"])
     return 0
 
 
@@ -61,8 +70,15 @@ def cmd_layout(pasta: Path, arquivo: Path | None, recorte: str | None) -> int:
     if arquivo is None:
         sys.exit("ERRO: informe o arquivo de layout (ex.: --layout projetos/x/propostas/a/layout.yaml)")
     geo = _carregar(pasta)
+    from .layout import ambiente_do_arquivo
     try:
-        layout = carregar_layout(arquivo)
+        cat = _catalogo(pasta)
+        layout = carregar_layout(arquivo, cat, ambiente_do_arquivo(arquivo))
+    except ValueError as e:
+        if not isinstance(e, ValidationError):
+            print(f"ERRO: {e}", file=sys.stderr)
+            return 2
+        raise
     except ValidationError as e:
         print(f"ERRO de esquema em {arquivo}:", file=sys.stderr)
         for err in e.errors():
@@ -76,42 +92,107 @@ def cmd_layout(pasta: Path, arquivo: Path | None, recorte: str | None) -> int:
             print(a)
     print(f"\nResumo: {resumo(achados)}")
     print(resumo_ocupacao(geo, layout))
-    for p in desenhar(geo, arquivo.parent / "saidas", layout, crit, recorte, nome="planta-layout"):
+    gerados = desenhar(geo, arquivo.parent / "saidas", layout, crit, recorte, nome="planta-layout")
+    for p in gerados:
         print(f"gerado: {p}")
+    _manifesto(arquivo.parent / "saidas", gerados, [pasta / "geometria.yaml", arquivo, pasta / "criterios.yaml"])
     return 1 if any(a.nivel == "erro" for a in achados) else 0
+
+
+def _catalogo(pasta: Path) -> dict:
+    from .catalogo import carregar_catalogo, pastas_catalogo
+    return carregar_catalogo(pastas_catalogo(pasta))
+
+
+def _arquivos_catalogo(pasta: Path, layout) -> list[Path]:
+    from .catalogo import pastas_catalogo
+    usados = {m.produto for m in (layout.moveis if layout else []) if m.produto}
+    return [f for d in pastas_catalogo(pasta) for f in d.glob("*.yaml") if f.stem in usados]
+
+
+def _aplicar_conceito(cena: dict, geo, pasta: Path, arq: Path, pasta_arqs: Path, entradas: list,
+                      ambiente_padrao: str | None) -> list[str]:
+    """Valida e aplica um conceito.yaml (ou acabamentos.yaml antigo) à cena. Devolve erros."""
+    from .acabamentos import aplicar_acabamentos, carregar_acabamentos, validar_acabamentos
+    from .estilo import carregar_arquitetos, carregar_selecao, escolha_para, resolver
+    if arq.name == "conceito.yaml":
+        from .conceito import (avisos_cor_real, carregar_conceito, escolha_do_conceito,
+                               validar_referencias_aprovadas)
+        c = carregar_conceito(arq, ambiente_padrao)
+        esc = escolha_do_conceito(c, pasta)
+        if esc is None:
+            return [f"{arq}: sem `estilo` e sem `padrao` em {pasta / 'estilo.yaml'}"]
+        acab, alvo = c.acabamentos(), c.ambiente
+        erros = validar_referencias_aprovadas(c, pasta, pasta_arqs)
+        for a in avisos_cor_real(c, cena):
+            print(f"AVISO conceito: {a}")
+        if c.estilo is None:
+            entradas.append(pasta / "estilo.yaml")
+    else:  # formato antigo: acabamentos.yaml + estilo.yaml
+        acab = carregar_acabamentos(arq)
+        sel_arq = arq.parent / "estilo.yaml"
+        if not sel_arq.exists():
+            sel_arq = pasta / "estilo.yaml"
+        par = escolha_para(carregar_selecao(sel_arq), acab.ambiente) if sel_arq.exists() else None
+        if par is None:
+            return [f"{arq} precisa de um estilo.yaml com arquiteto para '{acab.ambiente}'"]
+        esc, alvo, erros = par[1], acab.ambiente, []
+        entradas.append(sel_arq)
+    resolvido = resolver(carregar_arquitetos(pasta_arqs), alvo, esc)
+    entradas += [arq, pasta_arqs / "tags.yaml"] + [pasta_arqs / a / "arquiteto.yaml"
+                                                    for a in [esc.principal, *esc.acentos]]
+    erros += validar_acabamentos(acab, resolvido, geo, cena)
+    if not erros:
+        aplicar_acabamentos(cena, acab, resolvido, geo)
+        print(f"conceito: {arq} ({esc.principal}{' + ' + ', '.join(esc.acentos) if esc.acentos else ''})")
+    return erros
 
 
 def cmd_cena(pasta: Path, arquivo: Path | None, ambientes: list[str],
              acabamentos: Path | None = None, pasta_arqs: Path = Path("arquitetos")) -> int:
-    """Gera saidas/cena.json para o Blender (geometria + layout + câmeras dos ambientes pedidos)."""
+    """Gera cena.json para o Blender.
+
+    Sem --layout: layouts aprovados de todos os ambientes + `ambientes/<id>/conceito.yaml` de cada um
+    -> saidas/cena.json do projeto. Com --layout de uma proposta: esse layout + o conceito.yaml
+    (ou acabamentos.yaml antigo) ao lado dele -> saidas/ da proposta."""
     import json
 
     from .cena import cameras_ambiente, gerar_cena
-    from .layout import carregar_layout
+    from .layout import ambiente_do_arquivo, carregar_layout, carregar_layout_projeto, layouts_do_projeto
     geo = _carregar(pasta)
-    layout = carregar_layout(arquivo or pasta / "layout.yaml") if (arquivo or (pasta / "layout.yaml").exists()) else None
+    try:
+        cat = _catalogo(pasta)
+        if arquivo is not None:
+            layout, arqs_layout = carregar_layout(arquivo, cat, ambiente_do_arquivo(arquivo)), [arquivo]
+        else:
+            layout, arqs_layout = carregar_layout_projeto(pasta, cat), layouts_do_projeto(pasta)
+    except ValueError as e:
+        if isinstance(e, ValidationError):
+            raise
+        sys.exit(f"ERRO: {e}")
     cena = gerar_cena(geo, layout)
-    pasta_prop = arquivo.parent if arquivo else pasta
-    acab_arq = acabamentos or (pasta_prop / "acabamentos.yaml")
-    if acab_arq.exists():
-        from .acabamentos import aplicar_acabamentos, carregar_acabamentos, validar_acabamentos
-        from .estilo import carregar_arquitetos, carregar_selecao, escolha_para, resolver
-        acab = carregar_acabamentos(acab_arq)
-        sel_arq = acab_arq.parent / "estilo.yaml"
-        if not sel_arq.exists():
-            sel_arq = pasta / "estilo.yaml"
-        esc = escolha_para(carregar_selecao(sel_arq), acab.ambiente) if sel_arq.exists() else None
-        if esc is None:
-            sys.exit(f"ERRO: {acab_arq} precisa de um estilo.yaml com arquiteto para '{acab.ambiente}'")
-        resolvido = resolver(carregar_arquitetos(pasta_arqs), *esc)
-        erros = validar_acabamentos(acab, resolvido, geo, cena)
-        for e in erros:
-            print(f"ERRO acabamentos: {e}")
-        if erros:
-            return 1
-        aplicar_acabamentos(cena, acab, resolvido, geo)
-        print(f"acabamentos: {acab_arq} (estilo {sel_arq}): {len(cena['revestimentos'])} revestimentos, "
-              f"{len(cena['luzes'])} luzes")
+    entradas = [pasta / "geometria.yaml", *arqs_layout, *_arquivos_catalogo(pasta, layout)]
+
+    if acabamentos is not None:
+        conceitos = [(acabamentos, None)]
+    elif arquivo is not None:
+        c = next((arquivo.parent / n for n in ("conceito.yaml", "acabamentos.yaml")
+                  if (arquivo.parent / n).exists()), None)
+        conceitos = [(c, ambiente_do_arquivo(arquivo))] if c else []
+    else:
+        conceitos = [(f, f.parent.name) for f in sorted(pasta.glob("ambientes/*/conceito.yaml"))]
+    erros = []
+    for arq, amb in conceitos:
+        erros += _aplicar_conceito(cena, geo, pasta, arq, pasta_arqs, entradas, amb)
+    for e in erros:
+        print(f"ERRO conceito: {e}")
+    if erros:
+        return 1
+
+    from .materiais import neutros
+    faltam = neutros(cena)
+    if faltam:
+        cena["suposicoes"].append("sem aparência definida (cinza de marcação): " + ", ".join(faltam))
     for amb in ambientes:
         cena["cameras"] += cameras_ambiente(geo, amb, moveis=cena["moveis"])
     destino = (arquivo.parent if arquivo else pasta) / "saidas" / "cena.json"  # proposta -> saídas da proposta
@@ -120,8 +201,9 @@ def cmd_cena(pasta: Path, arquivo: Path | None, ambientes: list[str],
     print(f"paredes {len(cena['paredes'])}, recortes {len(cena['recortes'])}, vidros {len(cena['vidros'])}, "
           f"pisos {len(cena['pisos'])}, tetos {len(cena['tetos'])}, móveis {len(cena['moveis'])}, "
           f"câmeras {len(cena['cameras'])}")
-    for s in cena["suposicoes"]:
-        print(f"suposição: {s}")
+    for s_ in cena["suposicoes"]:
+        print(f"suposição: {s_}")
+    _manifesto(destino.parent, [destino], entradas)
     print(f"gerado: {destino}")
     return 0
 
@@ -220,9 +302,33 @@ def cmd_paleta(imagem: Path, n_cores: int, arquiteto: str | None, pasta_arqs: Pa
     return 0
 
 
+def cmd_status(pasta: Path) -> int:
+    """Fase dos ambientes, aprovações (e alterações sem decisão), saídas desatualizadas, pendências."""
+    from .status import relatorio
+    texto, problemas = relatorio(pasta, _carregar(pasta))
+    print(texto)
+    return 1 if problemas else 0
+
+
+def cmd_aprovacao(pasta: Path, numero: str | None, arquivos: list[str], base: list[str]) -> int:
+    """Imprime o cabeçalho YAML de uma decisão nova, com os hashes atuais dos arquivos aprovados."""
+    from .decisoes import bloco_aprovacao, carregar
+    if not arquivos:
+        sys.exit("ERRO: informe --arquivos (relativos ao projeto), ex.: --arquivos layout.yaml")
+    if numero is None:
+        nums = [int(d.numero) for d in carregar(pasta)]
+        numero = f"{max(nums, default=0) + 1:04d}"
+    try:
+        print(bloco_aprovacao(pasta, numero, arquivos, base), end="")
+    except FileNotFoundError as e:
+        sys.exit(f"ERRO: {e}")
+    return 0
+
+
 COMANDOS = {"validar": cmd_validar, "areas": cmd_areas,
             "planta": cmd_planta, "pendencias": cmd_pendencias, "layout": None, "cena": None,
-            "estilo": None, "referencias": None, "paleta": None}
+            "estilo": None, "referencias": None, "paleta": None,
+            "status": None, "aprovacao": None}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -244,11 +350,20 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--cores", type=int, default=6, help="(paleta) número de cores")
     p.add_argument("--arquiteto", help="(paleta) comparar com a paleta desta persona")
     p.add_argument("--gravar", action="store_true", help="(paleta) gravar em analise.paleta do YAML da imagem")
+    p.add_argument("--numero", help="(aprovacao) número da decisão (padrão: próximo)")
+    p.add_argument("--arquivos", nargs="*", default=[], help="(aprovacao) arquivos aprovados, relativos ao projeto")
+    p.add_argument("--base", nargs="*", default=[], help="(aprovacao) arquivos de base, relativos ao projeto")
     args = p.parse_args(argv)
+    global COMANDO
+    COMANDO = "archtools " + " ".join(sys.argv[1:] if argv is None else argv)
     if args.comando == "layout":
         return cmd_layout(args.projeto, args.layout, args.recorte)
     if args.comando == "cena":
         return cmd_cena(args.projeto, args.layout, args.cameras, args.acabamentos, args.arquitetos)
+    if args.comando == "status":
+        return cmd_status(args.projeto)
+    if args.comando == "aprovacao":
+        return cmd_aprovacao(args.projeto, args.numero, args.arquivos, args.base)
     if args.comando == "referencias":
         return cmd_referencias(args.projeto, args.arquitetos)
     if args.comando == "paleta":

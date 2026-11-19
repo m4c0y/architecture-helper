@@ -196,6 +196,23 @@ def faixa_vertical(m: Movel) -> tuple[float, float]:
     return base, topo
 
 
+# Mesa sem modelo = tampo + 4 pernas (o mesmo volume que a cena desenha): cabe coisa embaixo.
+MESA_TAMPO, MESA_PERNA, MESA_RECUO = 30, 50, 40  # mm
+
+
+def volumes(m: Movel, pegada: Polygon) -> list[tuple[Polygon, float, float]]:
+    """Volumes (pegada, z0, z1) usados nas colisões. Mesa sem modelo: tampo + pernas; demais: caixa."""
+    z0, z1 = faixa_vertical(m)
+    if m.categoria != "mesa" or m.modelo or z1 == float("inf") or z1 - z0 <= MESA_TAMPO:
+        return [(pegada, z0, z1)]
+    x0, y0, x1, y1 = pegada.bounds
+    vols = [(box(x0, y0, x1, y1), z1 - MESA_TAMPO, z1)]
+    for px in (x0 + MESA_RECUO, x1 - MESA_RECUO - MESA_PERNA):
+        for py in (y0 + MESA_RECUO, y1 - MESA_RECUO - MESA_PERNA):
+            vols.append((box(px, py, px + MESA_PERNA, py + MESA_PERNA), z0, z1 - MESA_TAMPO))
+    return vols
+
+
 def status_dims(m: Movel) -> Status:
     return status_mais_fraco(m.largura.status, m.profundidade.status)
 
@@ -256,13 +273,12 @@ def validar_layout(geo: Geometria, layout: Layout, criterios: Criterios) -> list
     moveis = {m.id: m for m in layout.moveis if m.id in pegadas}
     ids = list(moveis)
 
-    # colisões (pegada + faixa vertical)
+    # colisões (volumes: pegada + faixa vertical; mesa = tampo + pernas)
+    vols = {k: volumes(moveis[k], pegadas[k]) for k in ids}
     for i, a in enumerate(ids):
         for b in ids[i + 1:]:
-            (za0, za1), (zb0, zb1) = faixa_vertical(moveis[a]), faixa_vertical(moveis[b])
-            if za1 <= zb0 or zb1 <= za0:
-                continue
-            inter = _sobreposicao(pegadas[a], pegadas[b])
+            inter = max((_sobreposicao(pa, pb) for pa, za0, za1 in vols[a] for pb, zb0, zb1 in vols[b]
+                         if za1 > zb0 and zb1 > za0), default=0.0)
             if inter > AREA_MIN_MM2:
                 add(Achado("erro", f"móveis '{a}' e '{b}'", f"colidem ({inter / 1e6:.3f} m²)",
                            status_mais_fraco(status_dims(moveis[a]), status_dims(moveis[b]))))

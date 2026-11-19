@@ -166,7 +166,18 @@ def luminaria_piso_cupula(w, d, h):
             _cil(w / 2, d / 2, w, 0.25 * h, h, "cupula")]
 
 
+def luminaria_coluna_mesa(w, d, h):
+    """Luminária de piso com mesa lateral: base redonda, haste fina, tampo redondo a ~41% da altura
+    (70 de 170 cm no anúncio) e cúpula cilíndrica no topo (20 de 170 cm)."""
+    zc, zm = h * (150 / 170), h * (69 / 170)
+    return [_cil(w / 2, d / 2, 0.74 * w, 0, 20, "estrutura"),
+            _cil(w / 2, d / 2, 20, 20, zc, "estrutura"),
+            _cil(w / 2, d / 2, 0.77 * w, zm, zm + 10, "mesa"),
+            _cil(w / 2, d / 2, w, zc, h, "cupula")]
+
+
 MODELOS = {
+    "luminaria_coluna_mesa": luminaria_coluna_mesa,
     "pendente_esfera": pendente_esfera,
     "luminaria_arco": luminaria_arco,
     "luminaria_articulada": luminaria_articulada,

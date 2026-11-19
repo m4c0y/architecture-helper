@@ -186,8 +186,9 @@ def _partes(m, bb, z0: float, z1: float) -> list[dict]:
         return partes
     if m.categoria != "mesa":
         return [{"bbox": list(bb), "z0": z0, "z1": z1}]
+    from .layout import MESA_PERNA, MESA_RECUO, MESA_TAMPO
     x0, y0, x1, y1 = bb
-    tampo, perna, rec = 30, 50, 40
+    tampo, perna, rec = MESA_TAMPO, MESA_PERNA, MESA_RECUO
     partes = [{"bbox": [x0, y0, x1, y1], "z0": z1 - tampo, "z1": z1}]
     for px in (x0 + rec, x1 - rec - perna):
         for py in (y0 + rec, y1 - rec - perna):

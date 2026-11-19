@@ -52,6 +52,18 @@ def test_colisao_e_suspenso(geo, crit):
     assert erros(geo, crit, sofa, prateleira) == []
 
 
+def test_gaveteiro_sob_a_mesa(geo, crit):
+    # mesa 1600 x 700, h 750 (sem modelo = tampo de 30 + pernas de 50 recuadas 40): x 1200..2800, y 2800..3500
+    mesa = movel("mesa", 2000, 3150, 1600, 700, h=750, frente="-y")
+    mesa.categoria = "mesa"
+    baixo = movel("gav", 2000, 3150, 450, 500, h=700, frente="-y")        # sob o tampo, longe das pernas
+    assert not any("colidem" in e.mensagem for e in erros(geo, crit, mesa, baixo))
+    alto = movel("gav", 2000, 3150, 450, 500, h=730, frente="-y")         # encosta no tampo (720..750)
+    assert any("colidem" in e.mensagem for e in erros(geo, crit, mesa, alto))
+    na_perna = movel("gav", 1200 + 40 + 200, 3150 + 350 - 40 - 200, 450, 500, h=700, frente="-y")  # cobre uma perna
+    assert any("colidem" in e.mensagem for e in erros(geo, crit, mesa, na_perna))
+
+
 def test_folga_invadida(geo, crit):
     mesa = movel("mesa", 2000, 3150, 1600, 700, frente="-y", folga="atras_cadeira")
     caixa = movel("caixa", 2000, 2500, 400, 400)

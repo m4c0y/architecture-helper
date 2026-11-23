@@ -15,3 +15,6 @@ projetos/apartamento-reforma/
 
 # texturas baixadas (CC0, regeneráveis com catalogo/texturas/baixar.py)
 catalogo/texturas/*/
+
+# rascunho do artigo (local, não publicar)
+artigo/

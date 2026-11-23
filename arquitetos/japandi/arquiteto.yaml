@@ -33,6 +33,8 @@ luminarias:
   - {id: pendente_papel, tipo: pendente,       descricao: "pendente de papel de arroz, forma orgânica", temperatura_k: 2700, tags: []}
   - {id: piso_papel,     tipo: luminaria_piso, descricao: "luminária de piso baixa com difusor de papel", temperatura_k: 2700, tags: []}
   - {id: embutido_baixo, tipo: embutido,       descricao: "embutidos de facho aberto, poucos e recuados", temperatura_k: 2700, tags: []}
+  - {id: lanterna_mesa,  tipo: mesa,           descricao: "lanterna de papel de mesa, haste fina e globo de papel", temperatura_k: 2700, tags: [lanterna_papel]}
+  - {id: fita_led_quente, tipo: fita_led,      descricao: "fita de LED quente escondida sob armários e prateleiras (luz que parece vir das superfícies)", temperatura_k: 2700, tags: [fita_led]}
 
 regras:
   fazer:

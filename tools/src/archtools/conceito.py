@@ -12,7 +12,8 @@ Aprovado em `projetos/<p>/ambientes/<id>/conceito.yaml`; propostas em
     superficies:
       paredes: {padrao: branco_arroz, "1": verde_garrafa}   # índice da parede -> id de cor
       teto: branco_arroz
-      piso: null                         # null = existente/desconhecido
+      piso: null                         # null = existente/desconhecido; "#RRGGBB" = cor real
+      piso_textura: {tipo: reguas, largura: 200, comprimento: 1200}   # opcional (materiais.TEXTURAS)
     itens:                               # ids do layout.yaml do mesmo ambiente
       sofa: {cor: pedra}
       vaso: {pecas: {vaso: argila}}
@@ -32,7 +33,7 @@ from typing import Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
-from .acabamentos import AcabMovel, Acabamentos, Luz
+from .acabamentos import AcabMovel, Acabamentos, Luz, TexturaPiso
 from .estilo import Escolha
 
 
@@ -50,6 +51,7 @@ class Superficies(_Base):
     paredes: dict[str, str] = Field(default_factory=dict)
     teto: str | None = None
     piso: str | None = None
+    piso_textura: TexturaPiso | None = None
 
 
 class Conceito(_Base):
@@ -64,7 +66,8 @@ class Conceito(_Base):
     def acabamentos(self) -> Acabamentos:
         """Adaptador para o validador/exportador de acabamentos existente."""
         return Acabamentos(ambiente=self.ambiente, fonte=self.fonte, paredes=self.superficies.paredes,
-                           teto=self.superficies.teto, piso=self.superficies.piso, moveis=self.itens,
+                           teto=self.superficies.teto, piso=self.superficies.piso,
+                           piso_textura=self.superficies.piso_textura, moveis=self.itens,
                            luzes=self.luzes)
 
 

@@ -1,0 +1,13 @@
+# Texturas de imagem (PBR) reutilizáveis — todas CC0 (ambientcg.com, licença em ambientcg.com/license).
+# A COR nunca vem da imagem: o archtools define o hex; a imagem só dá variação de tom (em cinza),
+# rugosidade e relevo. As imagens NÃO vão para o git: `python catalogo/texturas/baixar.py` baixa de novo.
+# tamanho_mm = quanto mede no mundo real um ladrilho da imagem (escala de aplicação, aparência).
+texturas:
+  - {id: madeira_escura, asset: Wood051, tamanho_mm: 1000, uso: "nogueira (móveis, prateleiras, rack, mesa)"}
+  - {id: tecido_estofado, asset: Fabric082A, tamanho_mm: 300, uso: "estofados (sofá, cadeira)"}
+  - {id: linho, asset: Fabric036, tamanho_mm: 400, uso: "persiana, cúpulas, tecidos claros"}
+  - {id: metal_pintado, asset: Metal027, tamanho_mm: 600, uso: "metal preto com pintura eletrostática (estante, trilho, luminárias)"}
+  - {id: aco_escovado, asset: Metal009, tamanho_mm: 500, uso: "aço escovado/cromado (alça do sofá, pés)"}
+  - {id: parede_pintada, asset: PaintedPlaster017, tamanho_mm: 1500, uso: "paredes e teto pintados"}
+  - {id: piso_madeira, asset: WoodFloor046, tamanho_mm: 2000, uso: "variação do porcelanato imitando madeira"}
+  - {id: fibra_tapete, asset: Fabric031, tamanho_mm: 600, uso: "tapete de fibra natural"}

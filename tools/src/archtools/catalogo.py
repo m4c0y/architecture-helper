@@ -14,6 +14,8 @@ Procura em duas pastas (a do projeto vence em caso de id repetido):
     altura:       {valor: 900,  status: estimado, fonte: "anúncio: 90 cm"}
     modelo: null                 # modelo 3D paramétrico (archtools.modelos), se houver
     cor_real: null               # hex = cor conhecida (render não recolore); null = a definir no conceito
+                                 # {material: hex} = cor real por peça do modelo (ex.: estofado, estrutura)
+    textura: tecido              # opcional: preset de textura do produto (materiais.TEXTURAS)
     altura_assento: {...}        # forma de estofado (opcional, como no layout)
 
 No `layout.yaml`, um item com `produto: <id>` herda do catálogo tudo o que não informar
@@ -23,6 +25,7 @@ No `layout.yaml`, um item com `produto: <id>` herda do catálogo tudo o que não
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -31,7 +34,8 @@ from .estilo import HEX
 from .schema import Medida
 
 HERDAVEIS = ("categoria", "largura", "profundidade", "altura", "modelo", "altura_assento", "prof_encosto",
-             "braco_largura", "braco_altura", "bracos", "cor_real")
+             "braco_largura", "braco_altura", "bracos", "blocos_assento", "almofadas_encosto", "armacao", "cor_real",
+             "textura")
 
 
 class Produto(BaseModel):
@@ -45,21 +49,43 @@ class Produto(BaseModel):
     profundidade: Medida
     altura: Medida
     modelo: str | None = None
-    cor_real: str | None = None
+    cor_real: str | dict[str, str] | None = None
+    textura: str | None = None
     altura_assento: Medida | None = None
     prof_encosto: Medida | None = None
     braco_largura: Medida | None = None
     braco_altura: Medida | None = None
     bracos: list[str] = Field(default_factory=list)
+    blocos_assento: int | None = Field(default=None, ge=1)
+    almofadas_encosto: int | None = Field(default=None, ge=1)
+    armacao: Literal["tubular"] | None = None
+    fotos: list[str] = Field(default_factory=list)  # fotos do produto real (relativas ao projeto): referência p/ IA
     tags: list[str] = Field(default_factory=list)
     notas: str | None = None
 
     @field_validator("cor_real")
     @classmethod
     def _hex(cls, v):
-        if v is not None and not HEX.match(v):
-            raise ValueError(f"cor_real '{v}' não é hex #RRGGBB")
-        return v.upper() if v else v
+        return valida_cor_real(v)
+
+    @field_validator("textura")
+    @classmethod
+    def _tex(cls, v):
+        from .materiais import TEXTURAS
+        if v is not None and v not in TEXTURAS:
+            raise ValueError(f"textura '{v}' não existe ({', '.join(TEXTURAS)})")
+        return v
+
+
+def valida_cor_real(v):
+    """Hex único ou {material da peça: hex}; devolve em maiúsculas."""
+    if v is None:
+        return v
+    cores = v if isinstance(v, dict) else {"": v}
+    for h in cores.values():
+        if not HEX.match(h):
+            raise ValueError(f"cor_real '{h}' não é hex #RRGGBB")
+    return {k: h.upper() for k, h in v.items()} if isinstance(v, dict) else v.upper()
 
 
 def pastas_catalogo(pasta_projeto: Path | None, raiz: Path = Path(".")) -> list[Path]:

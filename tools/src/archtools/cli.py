@@ -20,6 +20,15 @@ def _manifesto(pasta: Path, saidas, entradas) -> None:
     registrar(pasta, list(saidas), [e for e in entradas if e is not None], COMANDO)
 
 
+def _geo_proposta(pasta: Path, arquivo: Path | None) -> Path:
+    """Pasta da geometria a usar: a da proposta, se ela trouxer `geometria.yaml` (mudança de
+    infraestrutura proposta: porta, ponto elétrico...); senão a do projeto (aprovada)."""
+    if arquivo is not None and (Path(arquivo).parent / "geometria.yaml").exists():
+        print(f"geometria DA PROPOSTA: {Path(arquivo).parent / 'geometria.yaml'} (não aprovada)")
+        return Path(arquivo).parent
+    return pasta
+
+
 def _carregar(pasta: Path):
     try:
         return carregar_geometria(pasta)
@@ -69,7 +78,8 @@ def cmd_layout(pasta: Path, arquivo: Path | None, recorte: str | None) -> int:
     from .planta2d import desenhar
     if arquivo is None:
         sys.exit("ERRO: informe o arquivo de layout (ex.: --layout projetos/x/propostas/a/layout.yaml)")
-    geo = _carregar(pasta)
+    gdir = _geo_proposta(pasta, arquivo)
+    geo = _carregar(gdir)
     from .layout import ambiente_do_arquivo
     try:
         cat = _catalogo(pasta)
@@ -95,7 +105,7 @@ def cmd_layout(pasta: Path, arquivo: Path | None, recorte: str | None) -> int:
     gerados = desenhar(geo, arquivo.parent / "saidas", layout, crit, recorte, nome="planta-layout")
     for p in gerados:
         print(f"gerado: {p}")
-    _manifesto(arquivo.parent / "saidas", gerados, [pasta / "geometria.yaml", arquivo, pasta / "criterios.yaml"])
+    _manifesto(arquivo.parent / "saidas", gerados, [gdir / "geometria.yaml", arquivo, pasta / "criterios.yaml"])
     return 1 if any(a.nivel == "erro" for a in achados) else 0
 
 
@@ -157,9 +167,10 @@ def cmd_cena(pasta: Path, arquivo: Path | None, ambientes: list[str],
     (ou acabamentos.yaml antigo) ao lado dele -> saidas/ da proposta."""
     import json
 
-    from .cena import cameras_ambiente, gerar_cena
+    from .cena import cameras_ambiente, cameras_nomeadas, gerar_cena
     from .layout import ambiente_do_arquivo, carregar_layout, carregar_layout_projeto, layouts_do_projeto
-    geo = _carregar(pasta)
+    gdir = _geo_proposta(pasta, arquivo)
+    geo = _carregar(gdir)
     try:
         cat = _catalogo(pasta)
         if arquivo is not None:
@@ -170,8 +181,16 @@ def cmd_cena(pasta: Path, arquivo: Path | None, ambientes: list[str],
         if isinstance(e, ValidationError):
             raise
         sys.exit(f"ERRO: {e}")
+    arqs_det = []
+    if arquivo is None:  # cena aprovada: aplica o detalhamento (fase P4) dos ambientes
+        from .detalhamento import aplicar_detalhamento
+        arqs_det, erros_det = aplicar_detalhamento(layout, pasta)
+        for e in erros_det:
+            print(f"ERRO detalhamento: {e}")
+        if erros_det:
+            return 1
     cena = gerar_cena(geo, layout)
-    entradas = [pasta / "geometria.yaml", *arqs_layout, *_arquivos_catalogo(pasta, layout)]
+    entradas = [gdir / "geometria.yaml", *arqs_layout, *arqs_det, *_arquivos_catalogo(pasta, layout)]
 
     if acabamentos is not None:
         conceitos = [(acabamentos, None)]
@@ -189,12 +208,21 @@ def cmd_cena(pasta: Path, arquivo: Path | None, ambientes: list[str],
     if erros:
         return 1
 
-    from .materiais import neutros
+    from .materiais import aplicar_imagens, neutros, orientar_veios
+    orientar_veios(cena)
+    sem_imagem = aplicar_imagens(cena)
+    if sem_imagem:
+        cena["suposicoes"].append("texturas de imagem ausentes (procedural no lugar; rode catalogo/texturas/baixar.py): "
+                                  + ", ".join(sem_imagem))
     faltam = neutros(cena)
     if faltam:
         cena["suposicoes"].append("sem aparência definida (cinza de marcação): " + ", ".join(faltam))
     for amb in ambientes:
         cena["cameras"] += cameras_ambiente(geo, amb, moveis=cena["moveis"])
+        arq_cam = pasta / "ambientes" / amb / "cameras.yaml"
+        if arq_cam.exists():
+            cena["cameras"] += cameras_nomeadas(geo, amb, arq_cam)
+            entradas.append(arq_cam)
     destino = (arquivo.parent if arquivo else pasta) / "saidas" / "cena.json"  # proposta -> saídas da proposta
     destino.parent.mkdir(parents=True, exist_ok=True)
     destino.write_text(json.dumps(cena, ensure_ascii=False), encoding="utf-8")
@@ -325,10 +353,52 @@ def cmd_aprovacao(pasta: Path, numero: str | None, arquivos: list[str], base: li
     return 0
 
 
+def cmd_ia(pasta: Path, ambiente: str | None, vistas: list[str]) -> int:
+    """Acabamento fotográfico com FLUX.2 [max] + vista mestra (P5): candidatas ILUSTRATIVAS em
+    <saida>/ia-candidatas/. Custo por pedido na fal: estime antes e combine um teto com o usuário."""
+    from .ia_flux2 import rodar
+    if not ambiente:
+        sys.exit("ERRO: informe --ambiente (ex.: --ambiente dorm2)")
+    try:
+        rodar(pasta, ambiente, vistas or None)
+    except RuntimeError as e:
+        print(f"ERRO: {e}", file=sys.stderr)
+        return 2
+    return 0
+
+
+def cmd_render_final(pasta: Path, ambiente: str | None) -> int:
+    """Mostra as chamadas do Blender da P5 do ambiente (saída sempre em <saida>/blender/)."""
+    from .ia_flux2 import comandos_blender
+    if not ambiente:
+        sys.exit("ERRO: informe --ambiente (ex.: --ambiente dorm2)")
+    try:
+        for linha in comandos_blender(pasta, ambiente):
+            print(linha)
+    except RuntimeError as e:
+        print(f"ERRO: {e}", file=sys.stderr)
+        return 2
+    return 0
+
+
+def cmd_ia_selecionar(pasta: Path, ambiente: str | None, escolhas: list[str], limpar: bool) -> int:
+    """Grava as candidatas escolhidas (padrão: maior aderência) em <saida>/ia/ + selecao.json."""
+    from .ia_flux2 import selecionar
+    if not ambiente:
+        sys.exit("ERRO: informe --ambiente (ex.: --ambiente dorm2)")
+    try:
+        final = selecionar(pasta, ambiente, dict(e.split("=", 1) for e in escolhas), limpar)
+    except (RuntimeError, FileNotFoundError, ValueError) as e:
+        print(f"ERRO: {e}", file=sys.stderr)
+        return 2
+    print(f"escolhidas em {final}")
+    return 0
+
+
 COMANDOS = {"validar": cmd_validar, "areas": cmd_areas,
             "planta": cmd_planta, "pendencias": cmd_pendencias, "layout": None, "cena": None,
             "estilo": None, "referencias": None, "paleta": None,
-            "status": None, "aprovacao": None}
+            "status": None, "aprovacao": None, "ia": None, "ia-selecionar": None, "render-final": None}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -353,6 +423,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--numero", help="(aprovacao) número da decisão (padrão: próximo)")
     p.add_argument("--arquivos", nargs="*", default=[], help="(aprovacao) arquivos aprovados, relativos ao projeto")
     p.add_argument("--base", nargs="*", default=[], help="(aprovacao) arquivos de base, relativos ao projeto")
+    p.add_argument("--vistas", nargs="*", default=[], help="(ia) refazer só estas vistas (ex.: dorm2-mesa-noite)")
+    p.add_argument("--escolha", nargs="*", default=[],
+                   help="(ia-selecionar) vista=arquivo da candidata (ex.: dorm2-mesa-noite=dorm2-mesa-noite-s21.png)")
+    p.add_argument("--limpar", action="store_true", help="(ia-selecionar) apagar ia-candidatas/ depois")
     args = p.parse_args(argv)
     global COMANDO
     COMANDO = "archtools " + " ".join(sys.argv[1:] if argv is None else argv)
@@ -368,6 +442,12 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_referencias(args.projeto, args.arquitetos)
     if args.comando == "paleta":
         return cmd_paleta(args.projeto, args.cores, args.arquiteto, args.arquitetos, args.gravar)
+    if args.comando == "ia":
+        return cmd_ia(args.projeto, args.ambiente, args.vistas)
+    if args.comando == "render-final":
+        return cmd_render_final(args.projeto, args.ambiente)
+    if args.comando == "ia-selecionar":
+        return cmd_ia_selecionar(args.projeto, args.ambiente, args.escolha, args.limpar)
     if args.comando == "estilo":
         return cmd_estilo(args.projeto, args.estilo, args.arquitetos, args.ambiente)
     return COMANDOS[args.comando](args.projeto)

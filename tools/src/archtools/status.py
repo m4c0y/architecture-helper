@@ -11,7 +11,8 @@ Fases (decisão do usuário, 2026-11-18): P1 levantamento · P2 projeto do ambie
 Cada ambiente tem `ambientes/<id>/` com briefing.md, conceito.yaml e layout.yaml (a pasta é a
 aprovação; propostas ficam em propostas/). O layout.yaml único antigo do projeto ainda conta como
 layout aprovado dos ambientes que tiverem itens nele, até ser migrado.
-P4–P6 ainda não têm artefatos próprios: só P2a–P3 são distinguíveis por enquanto.
+P4 = existe `ambientes/<id>/detalhamento.yaml` (fidelidade sem decisão nova); P5 = existe
+`ambientes/<id>/render_final.yaml` (câmeras e qualidade das imagens definitivas). P6 ainda não tem artefato.
 """
 
 from __future__ import annotations
@@ -67,7 +68,12 @@ def _estilo(pasta: Path) -> tuple[bool, set[str]]:
     return bool(dados.get("padrao")), set(dados.get("ambientes") or {})
 
 
-def fase_ambiente(tem_layout: bool, tem_conceito: bool, tem_briefing: bool = False) -> str:
+def fase_ambiente(tem_layout: bool, tem_conceito: bool, tem_briefing: bool = False,
+                  tem_detalhamento: bool = False, tem_render_final: bool = False) -> str:
+    if tem_layout and tem_conceito and tem_render_final:
+        return "P5 render final"
+    if tem_layout and tem_conceito and tem_detalhamento:
+        return "P4 detalhamento"
     if tem_layout and tem_conceito:
         return "P3 preview e refinamento"
     if tem_layout:
@@ -148,7 +154,8 @@ def relatorio(pasta: Path, geo: Geometria) -> tuple[str, int]:
             continue
         d = pasta / "ambientes" / amb.id
         conceito = (d / "conceito.yaml").exists() or amb.id in com_estilo
-        fase = fase_ambiente(por_amb[amb.id] > 0, conceito, (d / "briefing.md").exists())
+        fase = fase_ambiente(por_amb[amb.id] > 0, conceito, (d / "briefing.md").exists(),
+                             (d / "detalhamento.yaml").exists(), (d / "render_final.yaml").exists())
         det = [f"{por_amb[amb.id]} itens no layout" if por_amb[amb.id] else "sem layout"]
         if abertas[amb.id]:
             det.append(f"{abertas[amb.id]} proposta(s) em aberto")

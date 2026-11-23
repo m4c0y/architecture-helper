@@ -24,7 +24,11 @@ tags:
   couro: "couro natural"
   # luz
   filamento: "lâmpada de filamento aparente"
+  lanterna_papel: "luminária de lanterna japonesa de papel (pendente, de mesa ou de chão)"
+  fita_led: "fita de LED indireta (sob prateleiras, bancadas, atrás de painéis)"
   # cor e superfície
+  verde_escuro: "parede ou superfície em verde escuro / verde-oliva fechado"
+  ripado: "painel ripado de madeira (ripas verticais)"
   cor_saturada: "cores intensas (vermelho, azul royal, amarelo puro...)"
   pastel: "tons pastel"
   cinza_frio: "cinzas azulados/frios"

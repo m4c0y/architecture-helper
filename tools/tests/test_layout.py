@@ -118,3 +118,45 @@ def test_planta_com_layout(geo, crit, tmp_path):
     lay = Layout(nome="t", moveis=[movel("mesa", 2000, 3150, 1600, 700, frente="-y", folga="atras_cadeira")])
     saidas = desenhar(geo, tmp_path, lay, crit, recorte="sala", nome="x")
     assert all(p.exists() for p in saidas)
+
+
+def test_decor_sobre_prateleira_calcula_elevacao(geo, crit):
+    est = movel("estante", 600, 3300, 800, 400, h=1800, frente="-y")
+    est.modelo = "estante_industrial"
+    livros = movel("livros", 600, 3300, 700, 220, h=240, frente="-y")
+    livros.categoria, livros.sobre, livros.nivel = "decor", "estante", 2
+    lay = Layout(nome="t", moveis=[est, livros])
+    assert lay.moveis[1].elevacao.valor == round(0.317 * 1800) + 20
+    assert lay.moveis[1].elevacao.status == "confirmado"
+    assert erros(geo, crit, *lay.moveis) == []  # dentro da estante: sem colisão com o apoio
+
+
+def test_decor_sobre_fora_do_apoio_e_nivel_inexistente(geo, crit):
+    rack = movel("rack", 2000, 1000, 1200, 400, h=600)
+    vaso = movel("vaso", 2700, 1000, 300, 300, h=400)  # metade para fora do rack
+    vaso.categoria, vaso.sobre = "decor", "rack"
+    lay = Layout(nome="t", moveis=[rack, vaso])
+    assert lay.moveis[1].elevacao.valor == 600
+    assert any("pegada do apoio" in e.mensagem for e in erros(geo, crit, *lay.moveis))
+    vaso.nivel = 3
+    with pytest.raises(ValueError, match="nível"):
+        Layout(nome="t", moveis=[rack, vaso])
+
+
+def test_tapete_nao_colide_nem_bloqueia(geo, crit):
+    tapete = movel("tapete", 2000, 1750, 3000, 2000, h=10)
+    tapete.categoria = "decor"
+    sofa = movel("sofa", 2000, 1500, 2000, 900, h=850)
+    assert not any("colidem" in e.mensagem for e in erros(geo, crit, tapete, sofa))
+    mesa = movel("mesa", 2000, 3150, 1600, 700, frente="-y", folga="atras_cadeira")
+    assert erros(geo, crit, movel("tapete", 2000, 2500, 1600, 800, h=10), mesa)  # sem ser decor: invade
+    assert erros(geo, crit, tapete, mesa) == []
+
+
+def test_porta_de_correr_nao_tem_giro_mas_e_acesso(geo, crit):
+    porta = next(a for a in geo.aberturas if a.id == "porta-sala")
+    porta.tipo, porta.sentido = "porta_correr", None
+    assert not any("giro da porta" in e.mensagem for e in erros(geo, crit, movel("m", 600, 400, 400, 400)))
+    barreira = movel("barreira", 2000, 1500, 4000, 200)  # a porta de correr continua sendo o acesso
+    mesa = movel("mesa", 2000, 3150, 1600, 700, frente="-y", folga="atras_cadeira")
+    assert any("inacessível" in e.mensagem for e in erros(geo, crit, barreira, mesa))

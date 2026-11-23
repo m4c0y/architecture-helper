@@ -7,6 +7,10 @@ Convenções
   `largura` é medida ao longo da frente; `profundidade`, perpendicular a ela.
 - `elevacao` = altura da base acima do piso (prateleira suspensa, projetor...).
 - Posições são decisões de projeto (sem status). Dimensões são `Medida` (com status).
+- Decoração (`categoria: decor`): tapete, quadro, cortina, livros, almofadas... `sobre: <id>` apoia o
+  item em outro (topo dele ou a prateleira `nivel`, contada de baixo, 1 = a mais baixa): a elevação
+  é CALCULADA aqui e o item precisa caber na pegada do apoio. Tapete (decor no piso com até
+  30 mm de altura) não colide com nada nem bloqueia a passagem.
 """
 
 from __future__ import annotations
@@ -15,7 +19,7 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from shapely.affinity import translate
 from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import unary_union
@@ -25,6 +29,7 @@ from .schema import Geometria, Medida, Status, status_mais_fraco
 from .validacao import Achado
 
 ALTURA_BLOQUEIA_PASSAGEM = 1800  # móvel com base abaixo disso impede circular por baixo
+ALTURA_MAX_TAPETE = 30  # mm
 ALCANCE_MIN_MM2 = 100 * 100  # a folga precisa de ao menos 1 dm² alcançável a partir da porta
 AREA_MIN_MM2 = 1.0  # após encolher as geometrias em TOL_MM (só toques/frestas de até 5 mm são ignorados)
 
@@ -54,7 +59,7 @@ class Movel(_Base):
     ambiente: str
     categoria: Literal[
         "mesa", "cadeira", "sofa", "estante", "armario", "aparador", "cama",
-        "bancada", "prateleira", "equipamento", "outro",
+        "bancada", "prateleira", "equipamento", "decor", "outro",
     ]
     x: float
     y: float
@@ -72,10 +77,16 @@ class Movel(_Base):
     braco_largura: Medida | None = None
     braco_altura: Medida | None = None
     bracos: list[Literal["esquerdo", "direito"]] = Field(default_factory=list)  # de quem está sentado
+    blocos_assento: int | None = Field(default=None, ge=1)  # base em camadas iguais (ex.: sofá de espuma)
+    almofadas_encosto: int | None = Field(default=None, ge=1)  # encosto dividido entre os braços
+    armacao: Literal["tubular"] | None = None  # estofado: armação tubular cromada aparente nas laterais (aparência)
     produto: str | None = None  # id no catálogo (herda medidas/modelo/cor); texto livre em layouts antigos
     modelo: str | None = None  # modelo 3D paramétrico (archtools.modelos.MODELOS); só aparência
-    cor_real: str | None = None  # hex da cor conhecida do produto (normalmente herdada do catálogo)
+    cor_real: str | dict[str, str] | None = None  # hex (ou {material: hex}) do produto, herdado do catálogo
+    textura: str | None = None  # preset de textura do produto (materiais.TEXTURAS), herdado do catálogo
     associado: str | None = None  # id do móvel cuja folga este pode ocupar (ex.: cadeira -> mesa)
+    sobre: str | None = None  # id do item onde este se apoia (elevação calculada)
+    nivel: int | None = Field(default=None, ge=1)  # prateleira do apoio (1 = a mais baixa); padrão: topo
     notas: str | None = None
 
 
@@ -84,6 +95,37 @@ class Layout(_Base):
     descricao: str | None = None
     ambiente: str | None = None  # layout de um ambiente só: vale para itens sem `ambiente`
     moveis: list[Movel] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _apoiar(self) -> "Layout":
+        """Calcula a elevação dos itens com `sobre` (topo ou prateleira do apoio)."""
+        from .modelos import superficies_apoio
+        por_id = {m.id: m for m in self.moveis}
+        for m in self.moveis:
+            if m.sobre is None:
+                continue
+            a = por_id.get(m.sobre)
+            if a is None:
+                raise ValueError(f"item '{m.id}': apoio '{m.sobre}' não existe no layout")
+            if a.sobre is not None:
+                raise ValueError(f"item '{m.id}': apoio '{a.id}' também está apoiado (um nível só)")
+            if a.altura.valor is None:
+                m.elevacao = Medida(valor=None, status="desconhecido", fonte=f"sobre '{a.id}' (altura desconhecida)")
+                continue
+            niveis = superficies_apoio(a.modelo, a.largura.valor, a.profundidade.valor, a.altura.valor)
+            k = m.nivel or len(niveis)
+            if k > len(niveis):
+                raise ValueError(f"item '{m.id}': '{a.id}' tem {len(niveis)} nível(is) de apoio, não {k}")
+            m.elevacao = Medida(valor=round((a.elevacao.valor or 0) + niveis[k - 1]),
+                                status=status_mais_fraco(a.elevacao.status, a.altura.status),
+                                fonte=f"calculada: sobre '{a.id}'" + (f", nível {k}" if m.nivel else " (topo)"))
+        return self
+
+
+def no_piso(m: Movel) -> bool:
+    """Tapete: decoração apoiada no piso com até 30 mm — não colide nem bloqueia a passagem."""
+    return (m.categoria == "decor" and m.sobre is None and (m.elevacao.valor or 0) == 0
+            and m.altura.valor is not None and m.altura.valor <= ALTURA_MAX_TAPETE)
 
 
 def carregar_layout(caminho: Path, catalogo: dict | None = None, ambiente_padrao: str | None = None) -> Layout:
@@ -218,10 +260,12 @@ def status_dims(m: Movel) -> Status:
 
 
 def giro_porta(geo: Geometria, ab) -> tuple[Polygon, tuple[float, float]] | None:
-    """Quarto de círculo varrido pela folha (global) e ponto de acesso interno da porta."""
+    """Quarto de círculo varrido pela folha (global) e ponto de acesso interno da porta.
+    Porta de correr: não varre o piso (área vazia), mas tem o mesmo ponto de acesso."""
     amb = next((a for a in geo.ambientes if a.id == ab.ambiente), None)
     ps = paredes(amb) if amb else []
-    if ab.parede >= len(ps) or ab.sentido is None:
+    correr = ab.tipo == "porta_correr"
+    if ab.parede >= len(ps) or (ab.sentido is None and not correr):
         return None
     seg = segmento_abertura(ab, ps[ab.parede])
     pol, _ = poligono_global(amb)
@@ -229,12 +273,14 @@ def giro_porta(geo: Geometria, ab) -> tuple[Polygon, tuple[float, float]] | None
         return None
     a, b, _ = seg
     w = Point(a).distance(Point(b))
-    eixo, ponta = (a, b) if ab.sentido.dobradica == "inicio" else (b, a)
+    eixo, ponta = (a, b) if correr or ab.sentido.dobradica == "inicio" else (b, a)
     ux, uy = (ponta[0] - eixo[0]) / w, (ponta[1] - eixo[1]) / w
     nx, ny = -uy, ux
     meio = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
     if not pol.contains(Point(meio[0] + nx * 10, meio[1] + ny * 10)):
         nx, ny = -nx, -ny
+    if correr:
+        return Polygon(), (meio[0] + nx * 50, meio[1] + ny * 50)
     if ab.sentido.abre_para == "fora":
         return None  # varre o ambiente vizinho; não verificado aqui
     quadrado = Polygon([eixo, (eixo[0] + ux * w, eixo[1] + uy * w),
@@ -271,12 +317,18 @@ def validar_layout(geo: Geometria, layout: Layout, criterios: Criterios) -> list
             add(Achado("erro", onde, f"sai do ambiente '{amb.id}' em {fora / 1e6:.3f} m²", status_dims(m)))
 
     moveis = {m.id: m for m in layout.moveis if m.id in pegadas}
-    ids = list(moveis)
+    for k, m in moveis.items():  # item apoiado precisa caber na pegada do apoio
+        if m.sobre in pegadas and _fora(pegadas[k], pegadas[m.sobre]) > AREA_MIN_MM2:
+            add(Achado("erro", f"móvel '{k}'", f"sai da pegada do apoio '{m.sobre}' "
+                       f"({_fora(pegadas[k], pegadas[m.sobre]) / 1e6:.3f} m²)", status_dims(m)))
+    ids = [k for k in moveis if not no_piso(moveis[k])]
 
     # colisões (volumes: pegada + faixa vertical; mesa = tampo + pernas)
     vols = {k: volumes(moveis[k], pegadas[k]) for k in ids}
     for i, a in enumerate(ids):
         for b in ids[i + 1:]:
+            if moveis[a].sobre == b or moveis[b].sobre == a:
+                continue
             inter = max((_sobreposicao(pa, pb) for pa, za0, za1 in vols[a] for pb, zb0, zb1 in vols[b]
                          if za1 > zb0 and zb1 > za0), default=0.0)
             if inter > AREA_MIN_MM2:
@@ -285,7 +337,8 @@ def validar_layout(geo: Geometria, layout: Layout, criterios: Criterios) -> list
 
     # cadeiras se movem: não bloqueiam a circulação nem invadem folgas
     bloqueiam = {k: p for k, p in pegadas.items()
-                 if (moveis[k].elevacao.valor or 0) < ALTURA_BLOQUEIA_PASSAGEM and moveis[k].categoria != "cadeira"}
+                 if (moveis[k].elevacao.valor or 0) < ALTURA_BLOQUEIA_PASSAGEM and moveis[k].categoria != "cadeira"
+                 and not no_piso(moveis[k])}
 
     # zonas de uso
     zonas = {}
@@ -313,7 +366,7 @@ def validar_layout(geo: Geometria, layout: Layout, criterios: Criterios) -> list
     # giro das portas
     portas_do_ambiente: dict[str, list] = {}
     for ab in geo.aberturas:
-        if ab.tipo != "porta":
+        if ab.tipo not in ("porta", "porta_correr"):
             continue
         g = giro_porta(geo, ab)
         if g is None:
@@ -335,6 +388,8 @@ def validar_layout(geo: Geometria, layout: Layout, criterios: Criterios) -> list
         faixa =LineString([seg[0], seg[1]]).buffer(300, cap_style="flat")
         for k, p in pegadas.items():
             _, topo = faixa_vertical(moveis[k])
+            if moveis[k].categoria == "decor":  # cortina/persiana é da janela; tapete/objetos não tapam
+                continue
             if _sobreposicao(p, faixa) > AREA_MIN_MM2 and topo > ab.peitoril.valor:
                 alt = "desconhecida" if topo == float("inf") else f"{topo:.0f} mm"
                 add(Achado("aviso", f"móvel '{k}'",
@@ -391,7 +446,7 @@ def resumo_ocupacao(geo: Geometria, layout: Layout) -> str:
     for amb_id, ms in por_amb.items():
         pol, _ = poligono_global(ambientes[amb_id])
         piso = [_global(pegada_local(m), ambientes[amb_id]) for m in ms
-                if (m.elevacao.valor or 0) < ALTURA_BLOQUEIA_PASSAGEM]
+                if (m.elevacao.valor or 0) < ALTURA_BLOQUEIA_PASSAGEM and not no_piso(m) and m.sobre is None]
         ocup = unary_union([p for p in piso if p is not None]).area
         linhas.append(f"{amb_id}: área {pol.area / 1e6:.2f} m², ocupada no piso {ocup / 1e6:.2f} m² "
                       f"({100 * ocup / pol.area:.0f}%), livre {(pol.area - ocup) / 1e6:.2f} m²")

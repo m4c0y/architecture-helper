@@ -11,3 +11,7 @@ projetos/*/propostas/*/saidas/
 
 # dados pessoais do usuário (não versionar no repositório público)
 projetos/apartamento/
+projetos/apartamento-reforma/
+
+# texturas baixadas (CC0, regeneráveis com catalogo/texturas/baixar.py)
+catalogo/texturas/*/

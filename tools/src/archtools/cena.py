@@ -10,7 +10,8 @@ Conteúdo (mm, coordenadas globais, z para cima):
 - pisos/tetos: superfícies trianguladas (tetos podem ser ocultados nas vistas de cima)
 - cercamentos: prismas finos (tela)
 - moveis:      caixas (bbox no piso + z0/z1)
-- cameras:     posições/alvos (mm), lente; uma vista de cima ortográfica por ambiente
+- cameras:     posições/alvos (mm), lente; uma vista de cima ortográfica por ambiente; câmeras
+               nomeadas de `ambientes/<id>/cameras.yaml` (mesmas vistas para comparar propostas)
 
 Suposições marcadas em `suposicoes` (vão para o JSON e para o relatório do render).
 """
@@ -18,6 +19,7 @@ Suposições marcadas em `suposicoes` (vão para o JSON e para o relatório do r
 from __future__ import annotations
 
 import math
+from pathlib import Path
 
 import shapely
 from shapely.geometry import LineString, MultiPolygon, Polygon, box
@@ -25,7 +27,7 @@ from shapely.ops import unary_union
 
 from .geometria import de_medida, paredes, pe_direito, poligono_global, segmento_abertura
 from .layout import Layout, _global, pegada_local
-from .materiais import de_hex, de_peca, superficie
+from .materiais import TEXTURA_DA_PECA, de_hex, de_peca, superficie
 from .schema import Geometria
 
 ESPESSURA_EXTERNA = 150  # mm — estimada no desenho (0,14–0,16 m); não medida
@@ -143,14 +145,24 @@ def gerar_cena(geo: Geometria, layout: Layout | None = None) -> dict:
             z1 = z0 + (m.altura.valor or 0)
             partes = _partes(m, p.bounds, z0, z1)
             for pt in partes:  # cor conhecida do produto; senão, neutro (pendência no relatório)
-                pt["acabamento"] = de_peca(pt.get("material"))
-                if pt["acabamento"]["origem"] == "neutro" and m.cor_real:
-                    pt["acabamento"] = de_hex(m.cor_real, f"{m.produto or m.id}-real")
+                aplicar_cor_real(pt, m)
             cena["moveis"].append({"id": m.id, "nome": m.nome, "categoria": m.categoria, "ambiente": m.ambiente,
                                    "bbox": list(p.bounds), "z0": z0, "z1": z1, "frente": m.frente,
                                    "modelo": m.modelo, "produto": m.produto, "cor_real": m.cor_real,
                                    "partes": partes})
     return cena
+
+
+def aplicar_cor_real(pt: dict, m) -> None:
+    """Acabamento da peça: material do modelo; cor real do produto (por peça, ou hex único nas peças
+    sem cor própria); senão, neutro. A textura vem do produto, do material da peça ou do preset dele."""
+    mat = pt.get("material")
+    pt["acabamento"] = de_peca(mat)
+    real = m.cor_real
+    hex_ = real.get(mat) if isinstance(real, dict) else (real if pt["acabamento"]["origem"] == "neutro" else None)
+    if hex_:
+        tex = TEXTURA_DA_PECA.get(mat) if isinstance(real, dict) else (m.textura or TEXTURA_DA_PECA.get(mat))
+        pt["acabamento"] = de_hex(hex_, f"{m.produto or m.id}-{mat or 'real'}", tex=tex)
 
 
 def _faixa(bb, lado: str, espessura: float):
@@ -164,6 +176,86 @@ OPOSTO = {"+x": "-x", "-x": "+x", "+y": "-y", "-y": "+y"}
 ESQUERDA = {"+x": "+y", "-x": "-y", "+y": "-x", "-y": "+x"}  # de quem olha na direção da frente
 
 
+# Arredondamento das peças de estofado (só aparência no Blender; fração da menor dimensão da peça)
+RAIO_BLOCO = 0.2   # blocos de assento
+RAIO_ROLO = 0.45   # braços (rolos)
+RAIO_ENCOSTO = 0.28  # almofadas de encosto: blocos de cantos macios, não rolos (foto do Flowin)
+FOLGA_ALMOFADAS = 4  # mm entre almofadas de encosto vizinhas: encostadas, leem como uma peça só
+TUBO = 22  # mm: diâmetro do tubo da armação tubular (aparência)
+
+
+def _armacao(m, bb, z0: float, za: float, zb: float, lados: dict) -> list[dict]:
+    """Armação tubular cromada aparente em cada lateral com braço: dois montantes (perto da frente e
+    do fundo) da metade da base até o meio do braço, ligados por uma travessa na metade da base."""
+    partes = []
+    zm = z0 + (za - z0) / 2
+    zt = za + 0.5 * (zb - za)
+    prof = 0 if m.frente[1] == "x" else 1  # índice do eixo da profundidade no bbox
+    for lado, eixo in lados.items():
+        f = _faixa(bb, eixo, TUBO)
+        a, b = f[prof] + 0.12 * (f[prof + 2] - f[prof]), f[prof + 2] - 0.12 * (f[prof + 2] - f[prof])
+        lat = (f[1 - prof] + f[3 - prof]) / 2  # centro da faixa no eixo lateral
+
+        def ponto(pp, z):
+            return [pp, lat, z] if prof == 0 else [lat, pp, z]
+        # laço: montante da frente, travessa no alto (dentro do rolo), montante do fundo, travessa embaixo
+        pts = [ponto(a, zm), ponto(a, zt), ponto(b, zt), ponto(b, zm)]
+        p = list(f)
+        p[prof], p[prof + 2] = a - TUBO / 2, b + TUBO / 2
+        partes.append({"bbox": p, "z0": zm - TUBO / 2, "z1": zt + TUBO / 2, "material": "cromado", "forma": "tubo",
+                       "parte": f"armacao-{lado}", "tubo": {"pontos": pts, "raio": TUBO / 2, "fechado": True}})
+    return partes
+
+
+def _aparar(bb, lado: str, d: float):
+    """Recua em `d` mm o lado ('+x', '-x', '+y', '-y') do retângulo bb."""
+    x0, y0, x1, y1 = bb
+    return {"+x": [x0, y0, x1 - d, y1], "-x": [x0 + d, y0, x1, y1],
+            "+y": [x0, y0, x1, y1 - d], "-y": [x0, y0 + d, x1, y1]}[lado]
+
+
+def _raio(bb, z0, z1, fracao):
+    return round(fracao * min(bb[2] - bb[0], bb[3] - bb[1], z1 - z0), 1)
+
+
+def _sofa(m, bb, z0: float, z1: float) -> list[dict]:
+    """Estofado: base em `blocos_assento` camadas + braços (faixas laterais, profundidade toda) +
+    encosto entre os braços, dividido em `almofadas_encosto`. Peças com `raio` de arredondamento."""
+    za = z0 + m.altura_assento.valor
+    n = m.blocos_assento or 1
+    hb = (za - z0) / n
+    partes = []
+    for i in range(n):
+        b0, b1 = z0 + i * hb, z0 + (i + 1) * hb
+        partes.append({"bbox": list(bb), "z0": b0, "z1": b1, "parte": "assento" if n == 1 else f"assento-{i + 1}",
+                       "raio": _raio(bb, b0, b1, RAIO_BLOCO), "forma": "almofada"})
+    bw = m.braco_largura.valor if m.braco_largura is not None and m.braco_largura.valor else 0
+    zb = z0 + (m.braco_altura.valor if m.braco_altura and m.braco_altura.valor else z1 - z0)
+    lados = {}
+    for lado in (m.bracos if bw else []):
+        eixo = ESQUERDA[m.frente] if lado == "esquerdo" else OPOSTO[ESQUERDA[m.frente]]
+        lados[lado] = eixo
+        fb = _faixa(bb, eixo, bw)
+        partes.append({"bbox": fb, "z0": za, "z1": zb, "parte": f"braco-{lado}", "raio": _raio(fb, za, zb, RAIO_ROLO),
+                       "forma": "rolo", "eixo": m.frente[1]})  # rolo deitado ao longo da profundidade
+    if m.prof_encosto is not None and m.prof_encosto.valor:
+        enc = _faixa(bb, OPOSTO[m.frente], m.prof_encosto.valor)
+        for eixo in lados.values():
+            enc = _aparar(enc, eixo, bw)
+        k = m.almofadas_encosto or 1
+        lat = 0 if ESQUERDA[m.frente][1] == "x" else 1  # índice do eixo lateral no bbox
+        a, b = enc[lat], enc[lat + 2]
+        passo = (b - a - FOLGA_ALMOFADAS * (k - 1)) / k
+        for j in range(k):
+            e = list(enc)
+            e[lat], e[lat + 2] = a + j * (passo + FOLGA_ALMOFADAS), a + j * (passo + FOLGA_ALMOFADAS) + passo
+            partes.append({"bbox": e, "z0": za, "z1": z1, "parte": "encosto" if k == 1 else f"encosto-{j + 1}",
+                           "raio": _raio(e, za, z1, RAIO_ENCOSTO if k > 1 else RAIO_BLOCO), "forma": "almofada"})
+    if m.armacao == "tubular" and lados:
+        partes += _armacao(m, bb, z0, za, zb, lados)
+    return partes
+
+
 def _partes(m, bb, z0: float, z1: float) -> list[dict]:
     """Volumes simples. Produto com `modelo` = peças do modelo paramétrico; mesa = tampo + 4 pernas;
     sofá com forma = assento + encosto + braços; demais = caixa única."""
@@ -172,18 +264,7 @@ def _partes(m, bb, z0: float, z1: float) -> list[dict]:
         pecas = MODELOS[m.modelo](m.largura.valor, m.profundidade.valor, m.altura.valor)
         return [para_global(pc, m.frente, bb, z0) for pc in pecas]
     if m.categoria == "sofa" and m.altura_assento is not None and m.altura_assento.valor:
-        za = z0 + m.altura_assento.valor
-        partes = [{"bbox": list(bb), "z0": z0, "z1": za, "parte": "assento"}]
-        if m.prof_encosto is not None and m.prof_encosto.valor:
-            partes.append({"bbox": _faixa(bb, OPOSTO[m.frente], m.prof_encosto.valor), "z0": za, "z1": z1,
-                           "parte": "encosto"})
-        if m.braco_largura is not None and m.braco_largura.valor and m.bracos:
-            zb = z0 + (m.braco_altura.valor if m.braco_altura and m.braco_altura.valor else z1 - z0)
-            for lado in m.bracos:
-                eixo = ESQUERDA[m.frente] if lado == "esquerdo" else OPOSTO[ESQUERDA[m.frente]]
-                partes.append({"bbox": _faixa(bb, eixo, m.braco_largura.valor), "z0": za, "z1": zb,
-                               "parte": f"braco-{lado}"})
-        return partes
+        return _sofa(m, bb, z0, z1)
     if m.categoria != "mesa":
         return [{"bbox": list(bb), "z0": z0, "z1": z1}]
     from .layout import MESA_PERNA, MESA_RECUO, MESA_TAMPO
@@ -194,6 +275,32 @@ def _partes(m, bb, z0: float, z1: float) -> list[dict]:
         for py in (y0 + rec, y1 - rec - perna):
             partes.append({"bbox": [px, py, px + perna, py + perna], "z0": z0, "z1": z1 - tampo})
     return partes
+
+
+def cameras_nomeadas(geo: Geometria, amb_id: str, arquivo) -> list[dict]:
+    """Câmeras fixas de um ambiente (`ambientes/<id>/cameras.yaml`), em coordenadas LOCAIS:
+
+        cameras:
+          - {id: sofa, pos: [400, 300, 1100], alvo: [1400, 2900, 900], lente: 16, nota: "do sofá para a mesa"}
+
+    O id final é '<ambiente>-<id>'. Posição e alvo são escolhas de enquadramento (sem status).
+    """
+    import yaml
+    from .geometria import deslocamento
+    amb = next(a for a in geo.ambientes if a.id == amb_id)
+    d, _ = deslocamento(amb)
+    if d is None:
+        return []
+    dados = yaml.safe_load(Path(arquivo).read_text(encoding="utf-8")) or {}
+    cams = []
+    for c in dados.get("cameras") or []:
+        falta = {"id", "pos", "alvo"} - set(c)
+        if falta:
+            raise ValueError(f"{arquivo}: câmera sem {sorted(falta)}")
+        g = lambda p: [p[0] + d[0], p[1] + d[1], p[2]]  # noqa: E731
+        cams.append({"id": f"{amb_id}-{c['id']}", "pos": g(c["pos"]), "alvo": g(c["alvo"]),
+                     "lente": c.get("lente", 18), "tipo": "perspectiva", "nomeada": True})
+    return cams
 
 
 def _livre(pos, moveis) -> bool:
@@ -226,7 +333,7 @@ def cameras_ambiente(geo: Geometria, amb_id: str, altura_olho=1600, recuo=250, m
     # closes dos produtos com modelo 3D: câmera à frente do móvel (até 1,8 m, dentro do ambiente)
     passo = {"+x": (1, 0), "-x": (-1, 0), "+y": (0, 1), "-y": (0, -1)}
     for m in moveis:
-        if m.get("ambiente") != amb_id or not m.get("modelo"):
+        if m.get("ambiente") != amb_id or not m.get("modelo") or m.get("categoria") == "decor":
             continue
         bx0, by0, bx1, by1 = m["bbox"]
         mx, my, mz = (bx0 + bx1) / 2, (by0 + by1) / 2, (m["z0"] + m["z1"]) / 2

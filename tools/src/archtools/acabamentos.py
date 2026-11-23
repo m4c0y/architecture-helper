@@ -8,8 +8,11 @@ e móveis de UM ambiente, e define as luzes das luminárias do layout.
     paredes: {padrao: branco_arroz, "1": verde_garrafa}   # índice da parede -> id de cor
     teto: branco_arroz
     piso: null                                           # null = piso existente (neutro)
+                                                         # "#RRGGBB" = cor real do revestimento escolhido
+                                                         #   (extraída por `archtools paleta`; não é do estilo)
+    piso_textura: {tipo: reguas, largura: 200, comprimento: 1200}   # opcional (presets em materiais.TEXTURAS)
     moveis:
-      sofa: {cor: pedra}                                 # todas as peças
+      sofa: {cor: pedra, textura: tecido}                # todas as peças; textura opcional
       vaso: {pecas: {vaso: argila}}                      # material da peça do modelo -> cor
       lum-papel: {cor: branco_arroz, forma: esfera}
     luzes:
@@ -31,9 +34,9 @@ from typing import Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
-from .estilo import Cor, EstiloResolvido, Luminaria
+from .estilo import HEX, Cor, EstiloResolvido, Luminaria
 from .geometria import paredes as paredes_amb
-from .geometria import pe_direito, poligono_global
+from .geometria import deslocamento, pe_direito, poligono_global
 from .materiais import PRODUTO
 from .schema import Geometria
 
@@ -48,15 +51,27 @@ class AcabMovel(_Base):
     cor: str | None = None
     pecas: dict[str, str] = Field(default_factory=dict)
     forma: Literal["caixa", "cilindro", "esfera"] | None = None
+    textura: str | None = None  # preset de materiais.TEXTURAS; padrão: pelas tags da cor / material da peça
+
+
+class TexturaPiso(_Base):
+    tipo: str
+    largura: float | None = Field(default=None, gt=0)       # mm (réguas/placas)
+    comprimento: float | None = Field(default=None, gt=0)   # mm
 
 
 class Luz(_Base):
     luminaria: str
     intensidade_w: float = Field(gt=0)
-    tipo: Literal["ponto", "spot"] = "ponto"
+    # ponto | spot | linha (fita de ponta a ponta sob o móvel). Padrão: linha p/ luminária fita_led, senão ponto.
+    # Na linha, intensidade_w é por metro de fita.
+    tipo: Literal["ponto", "spot", "linha"] | None = None
     altura: float | None = None  # mm acima da base do móvel; padrão: centro (pendente) ou topo - 50
     camada: Literal["geral", "tarefa", "destaque"] | None = None  # se dada, K = temperatura da camada
     cupula_acesa: bool | None = None  # cúpula brilha à noite; padrão: pendente/piso/coluna
+    # spot: ponto para onde aponta, em coordenadas LOCAIS do ambiente (mm); padrão: para baixo
+    alvo: list[float] | None = Field(default=None, min_length=3, max_length=3)
+    abertura: float | None = Field(default=None, gt=0, le=180)  # spot: ângulo do cone (graus); padrão 70
 
 
 class Acabamentos(_Base):
@@ -65,6 +80,7 @@ class Acabamentos(_Base):
     paredes: dict[str, str] = Field(default_factory=dict)
     teto: str | None = None
     piso: str | None = None
+    piso_textura: TexturaPiso | None = None
     moveis: dict[str, AcabMovel] = Field(default_factory=dict)
     luzes: dict[str, Luz] = Field(default_factory=dict)
 
@@ -93,13 +109,32 @@ def kelvin_para_linear(k: float) -> list[float]:
     return [round(_linear(max(0, min(255, v)) / 255), 5) for v in (r, g, b)]
 
 
-def acabamento_de(cor: Cor, superficie: str = "objeto") -> dict:
-    """Material de render: cor + metálico/rugosidade inferidos das tags da cor."""
+def textura_padrao(cor: Cor, superficie: str = "objeto") -> str | None:
+    """Preset de textura inferido das tags da cor (madeira, couro, metal) ou da superfície (pintura)."""
+    tags = set(cor.tags)
+    if superficie == "parede":
+        return "pintura"
+    if tags & {"nogueira", "madeira_clara", "madeira_escura", "madeira"}:
+        return "madeira"
+    if "couro" in tags:
+        return "couro"
+    if tags & {"latao", "metal_preto"}:
+        return "metal"
+    return None
+
+
+def acabamento_de(cor: Cor, superficie: str = "objeto", tex: str | None = None, **tex_params) -> dict:
+    """Material de render: cor + metálico/rugosidade inferidos das tags da cor (+ textura procedural)."""
+    from .materiais import textura
     tags = set(cor.tags)
     metal, rug = (1.0, 0.35) if "latao" in tags else (0.8, 0.45) if "metal_preto" in tags else \
         (0.0, 0.45) if "couro" in tags else (0.0, 0.85 if superficie == "parede" else 0.6)
-    return {"cor_id": cor.id, "hex": cor.hex, "rgba": hex_para_linear(cor.hex), "metal": metal, "rugosidade": rug,
-            "origem": "estilo"}
+    d = {"cor_id": cor.id, "hex": cor.hex, "rgba": hex_para_linear(cor.hex), "metal": metal, "rugosidade": rug,
+         "origem": "estilo"}
+    tex = tex or textura_padrao(cor, superficie)
+    if tex and tex != "liso":
+        d["textura"] = textura(tex, **{k: v for k, v in tex_params.items() if v is not None})
+    return d
 
 
 # ------------------------------------------------------------------ validação + exportação
@@ -109,6 +144,28 @@ def _indices(r: EstiloResolvido) -> tuple[dict[str, Cor], dict[str, Luminaria], 
     lums = {i.dado.id: i.dado for i in r.luminarias}
     origem = {i.dado.id: i.origem for i in [*r.paleta, *r.luminarias]}
     return cores, lums, origem
+
+
+
+RECUO_FITA = 30  # mm da borda frontal do móvel até a fita (perfil escondido sob a frente)
+
+
+def _fita(m: dict, luz: Luz, lum, k: float, origem: str) -> dict:
+    """Fita de LED de ponta a ponta sob o móvel: segmento no eixo do comprimento (perpendicular à
+    frente), recuado RECUO_FITA da borda frontal, na face de baixo (+ `altura`, se dada)."""
+    x0, y0, x1, y1 = m["bbox"]
+    f = m["frente"]
+    if f[1] == "x":  # frente em x -> fita corre em y
+        x = x1 - RECUO_FITA if f == "+x" else x0 + RECUO_FITA
+        pos, comp, eixo = [x, (y0 + y1) / 2], y1 - y0, "y"
+    else:
+        y = y1 - RECUO_FITA if f == "+y" else y0 + RECUO_FITA
+        pos, comp, eixo = [(x0 + x1) / 2, y], x1 - x0, "x"
+    z = m["z0"] + (luz.altura or 0) - 5
+    return {"id": f"luz-{m['id']}", "movel": m["id"], "luminaria": lum.id, "origem": origem,
+            "pos": [*pos, z], "tipo": "linha", "eixo": eixo, "comprimento": comp,
+            "w_por_m": luz.intensidade_w, "intensidade_w": round(luz.intensidade_w * comp / 1000, 2),
+            "temperatura_k": k, "camada": luz.camada, "rgb": kelvin_para_linear(k), "emissor": False}
 
 
 def validar_acabamentos(acab: Acabamentos, r: EstiloResolvido, geo: Geometria, cena: dict) -> list[str]:
@@ -132,8 +189,16 @@ def validar_acabamentos(acab: Acabamentos, r: EstiloResolvido, geo: Geometria, c
         if k != "padrao" and not (k.isdigit() and int(k) < n):
             erros.append(f"paredes: '{k}' não é 'padrao' nem índice de parede (0..{n - 1})")
         cor_ok(f"paredes.{k}", cid)
+    from .materiais import TEXTURAS
+
+    def tex_ok(onde: str, t: str | None) -> None:
+        if t is not None and t not in TEXTURAS:
+            erros.append(f"{onde}: textura '{t}' não existe ({', '.join(TEXTURAS)})")
+
+    tex_ok("piso_textura", acab.piso_textura.tipo if acab.piso_textura else None)
     cor_ok("teto", acab.teto)
-    cor_ok("piso", acab.piso)
+    if not (acab.piso and HEX.match(acab.piso)):  # hex = cor real do piso escolhido
+        cor_ok("piso", acab.piso)
     moveis = {m["id"]: m for m in cena["moveis"]}
     for mid, am in acab.moveis.items():
         m = moveis.get(mid)
@@ -143,6 +208,7 @@ def validar_acabamentos(acab: Acabamentos, r: EstiloResolvido, geo: Geometria, c
         if m["ambiente"] != acab.ambiente:
             erros.append(f"moveis.{mid}: está em '{m['ambiente']}', não em '{acab.ambiente}'")
         cor_ok(f"moveis.{mid}", am.cor)
+        tex_ok(f"moveis.{mid}.textura", am.textura)
         mats = {p.get("material") for p in m["partes"]}
         for peca, cid in am.pecas.items():
             if peca not in mats:
@@ -153,6 +219,8 @@ def validar_acabamentos(acab: Acabamentos, r: EstiloResolvido, geo: Geometria, c
             erros.append(f"luzes.{mid}: não existe no layout")
         if luz.luminaria not in lums:
             erros.append(f"luzes.{mid}: luminária '{luz.luminaria}' não está no estilo resolvido ({', '.join(lums)})")
+        if (luz.alvo is not None or luz.abertura is not None) and luz.tipo != "spot":
+            erros.append(f"luzes.{mid}: 'alvo'/'abertura' só valem para tipo 'spot'")
     return erros
 
 
@@ -188,37 +256,56 @@ def aplicar_acabamentos(cena: dict, acab: Acabamentos, r: EstiloResolvido, geo: 
         cena["revestimentos"].append(_superficie(pol, pd - 1, id=f"teto-{amb.id}", face="baixo",
                                                  **acabamento_de(cores[acab.teto], "parede")))
     if acab.piso:
-        cena["revestimentos"].append(_superficie(pol, 1, id=f"piso-{amb.id}-cor",
-                                                 **acabamento_de(cores[acab.piso], "piso")))
+        pt = acab.piso_textura
+        tex = dict(tex=pt.tipo, largura=pt.largura, comprimento=pt.comprimento) if pt else {}
+        if HEX.match(acab.piso):  # cor real do revestimento escolhido (não vem do estilo)
+            real = Cor(id="cor_real", nome="revestimento real", hex=acab.piso, papel="base", uso="piso")
+            ac = {**acabamento_de(real, "piso", **tex), "origem": "cor_real"}
+        else:
+            ac = acabamento_de(cores[acab.piso], "piso", **tex)
+        cena["revestimentos"].append(_superficie(pol, 1, id=f"piso-{amb.id}-cor", **ac))
 
+    from .materiais import PROPRIOS, TEXTURA_DA_PECA
     moveis = {m["id"]: m for m in cena["moveis"]}
     for mid, am in acab.moveis.items():
         m = moveis[mid]
         for pt in m["partes"]:
-            cid = am.pecas.get(pt.get("material")) or am.cor
+            mat = pt.get("material")
+            cid = am.pecas.get(mat) or (None if mat in PROPRIOS else am.cor)
             if cid:
-                pt["acabamento"] = acabamento_de(cores[cid])
+                tex = am.textura or TEXTURA_DA_PECA.get(pt.get("material")) or textura_padrao(cores[cid])  # a peça manda
+                pt["acabamento"] = acabamento_de(cores[cid], tex=tex)
             if am.forma and not m.get("modelo"):
                 pt["forma"] = am.forma
 
     for mid, luz in acab.luzes.items():
         m, lum = moveis[mid], lums[luz.luminaria]
+        tipo = luz.tipo or ("linha" if lum.tipo == "fita_led" else "ponto")
+        k = r.iluminacao.temperatura_k.get(luz.camada, lum.temperatura_k) if luz.camada else lum.temperatura_k
+        if tipo == "linha":
+            cena["luzes"].append(_fita(m, luz, lum, k, origem[lum.id]))
+            continue
         cupula = next((pt for pt in m["partes"] if pt.get("material") == "cupula"), None)
         x0, y0, x1, y1 = (cupula or m)["bbox"]
         if luz.altura is not None:
             z = m["z0"] + luz.altura
         elif cupula is not None:  # luz no centro do difusor (spot: na base dele)
-            z = cupula["z0"] + 10 if luz.tipo == "spot" else (cupula["z0"] + cupula["z1"]) / 2
+            z = cupula["z0"] + 10 if tipo == "spot" else (cupula["z0"] + cupula["z1"]) / 2
         elif lum.tipo == "pendente":
             z = (m["z0"] + m["z1"]) / 2
         else:
             z = m["z1"] - 50
-        k = r.iluminacao.temperatura_k.get(luz.camada, lum.temperatura_k) if luz.camada else lum.temperatura_k
         acesa = luz.cupula_acesa if luz.cupula_acesa is not None else lum.tipo in ("pendente", "luminaria_piso", "coluna")
         cena["luzes"].append({"id": f"luz-{mid}", "movel": mid, "luminaria": lum.id, "origem": origem[lum.id],
-                              "pos": [(x0 + x1) / 2, (y0 + y1) / 2, z], "tipo": luz.tipo,
+                              "pos": [(x0 + x1) / 2, (y0 + y1) / 2, z], "tipo": tipo,
                               "intensidade_w": luz.intensidade_w, "temperatura_k": k, "camada": luz.camada,
                               "rgb": kelvin_para_linear(k), "emissor": acesa})
+        if tipo == "spot":
+            if luz.alvo is not None:
+                d, _ = deslocamento(amb)
+                cena["luzes"][-1]["alvo"] = [luz.alvo[0] + d[0], luz.alvo[1] + d[1], luz.alvo[2]]
+            if luz.abertura is not None:
+                cena["luzes"][-1]["abertura"] = luz.abertura
         if lum.tipo == "pendente" and m["z1"] < pd:  # fio até a laje
             cx, cy = (m["bbox"][0] + m["bbox"][2]) / 2, (m["bbox"][1] + m["bbox"][3]) / 2
             m["partes"].append({"bbox": [cx - 4, cy - 4, cx + 4, cy + 4], "z0": m["z1"], "z1": pd,

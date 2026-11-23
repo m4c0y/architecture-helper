@@ -34,7 +34,8 @@ def arq(id_, cores, luminarias=(), evitar_tags=(), k_tarefa=3500):
 def ctx():
     geo = carregar_geometria(EXEMPLO)
     a = arq("a", [("branco", "#FFFFFF", "base", []), ("verde", "#2F4A3A", "apoio", [])],
-            luminarias=[("globo", "pendente", 2700, []), ("mesa", "mesa", 4000, [])], evitar_tags=["latao"])
+            luminarias=[("globo", "pendente", 2700, []), ("mesa", "mesa", 4000, []),
+                                ("fita", "fita_led", 2700, [])], evitar_tags=["latao"])
     b = arq("b", [("creme", "#EFE6D2", "base", []), ("latao", "#B08D57", "destaque", ["latao"]),
                   ("mostarda", "#C9962B", "destaque", [])])
     r = resolver({"a": a, "b": b}, "sala", Escolha(principal="a", acentos=["b"]))
@@ -45,6 +46,8 @@ def ctx():
               largura=M(300), profundidade=M(300), altura=M(300), elevacao=M(2100), modelo="pendente_esfera"),
         Movel(id="lmesa", nome="Luminária", ambiente="sala", categoria="outro", x=3000, y=3000, frente="-y",
               largura=M(150), profundidade=M(150), altura=M(450), modelo="luminaria_articulada"),
+        Movel(id="prat", nome="Prateleira", ambiente="sala", categoria="prateleira", x=2000, y=3375, frente="-y",
+              largura=M(900), profundidade=M(250), altura=M(20), elevacao=M(1500)),
     ])
     return geo, r, gerar_cena(geo, layout)
 
@@ -113,3 +116,54 @@ def test_moveis_e_luzes(ctx):
     pend = next(m for m in cena["moveis"] if m["id"] == "pend")
     assert pend["partes"][-1]["z1"] == cena["pe_direito"]  # fio até a laje
     assert cena["estilo"]["principal"] == "a"
+
+
+def test_piso_com_cor_real_hex(ctx):
+    geo, r, cena = ctx
+    assert validar_acabamentos(acab(piso="#A89880"), r, geo, cena) == []
+    aplicar_acabamentos(cena, acab(piso="#A89880"), r, geo)
+    piso = next(v for v in cena["revestimentos"] if v["id"] == "piso-sala-cor")
+    assert piso["hex"] == "#A89880" and piso["origem"] == "cor_real"
+    # id que não é da paleta nem hex continua sendo erro
+    assert any("piso" in e for e in validar_acabamentos(acab(piso="carvalho"), r, geo, cena))
+
+
+def test_texturas_do_piso_e_dos_itens(ctx):
+    geo, r, cena = ctx
+    a = acab(piso="#B2A28E", piso_textura={"tipo": "reguas", "largura": 200, "comprimento": 1200},
+             moveis={"sofa": {"cor": "mostarda", "textura": "tecido"}, "pend": {"cor": "branco"}})
+    assert validar_acabamentos(a, r, geo, cena) == []
+    aplicar_acabamentos(cena, a, r, geo)
+    piso = next(v for v in cena["revestimentos"] if v["id"] == "piso-sala-cor")
+    assert piso["textura"] == {"tipo": "reguas", "largura": 200, "comprimento": 1200, "junta": 2,
+                               "contraste": 0.18, "veio": 60}
+    parede = next(v for v in cena["revestimentos"] if v["id"].startswith("pintura-"))
+    assert parede["textura"]["tipo"] == "pintura"
+    sofa = next(m for m in cena["moveis"] if m["id"] == "sofa")
+    assert sofa["partes"][0]["acabamento"]["textura"]["tipo"] == "tecido"
+    ruim = acab(moveis={"sofa": {"cor": "mostarda", "textura": "marmore"}})
+    assert any("textura 'marmore'" in e for e in validar_acabamentos(ruim, r, geo, cena))
+
+
+def test_fita_de_led_de_ponta_a_ponta(ctx):
+    geo, r, cena = ctx
+    a = acab(luzes={"prat": {"luminaria": "fita", "camada": "geral", "intensidade_w": 10}})
+    assert validar_acabamentos(a, r, geo, cena) == []
+    aplicar_acabamentos(cena, a, r, geo)
+    lz = next(lz for lz in cena["luzes"] if lz["movel"] == "prat")
+    x0, y0, x1, y1 = next(m for m in cena["moveis"] if m["id"] == "prat")["bbox"]
+    assert lz["tipo"] == "linha" and lz["eixo"] == "x" and lz["comprimento"] == x1 - x0 == 900
+    assert lz["pos"] == [(x0 + x1) / 2, y0 + 30, 1495]  # recuada da frente (-y), sob a prateleira
+    assert lz["intensidade_w"] == 9.0  # 10 W/m x 0,9 m
+
+
+def test_spot_direcionado_com_alvo(ctx):
+    geo, r, cena = ctx
+    a = acab(luzes={"lmesa": {"luminaria": "mesa", "tipo": "spot", "intensidade_w": 20,
+                              "alvo": [0, 1000, 1200], "abertura": 35}})
+    assert validar_acabamentos(a, r, geo, cena) == []
+    aplicar_acabamentos(cena, a, r, geo)
+    lz = next(lz for lz in cena["luzes"] if lz["movel"] == "lmesa")
+    assert lz["alvo"] == [0, 1000, 1200] and lz["abertura"] == 35  # sala do exemplo: sem `posicao`
+    ruim = acab(luzes={"pend": {"luminaria": "globo", "intensidade_w": 40, "alvo": [0, 0, 0]}})
+    assert any("só valem para tipo 'spot'" in e for e in validar_acabamentos(ruim, r, geo, cena))
